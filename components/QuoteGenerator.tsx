@@ -5,7 +5,15 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { formatDateForDisplay, formatNok } from "@/lib/format";
 
-type Unit = "rs" | "m2" | "stk" | "timer";
+type Unit = "rs" | "m2" | "stk" | "timer" | "lm";
+
+type DocumentType =
+  | "Pristilbud"
+  | "Tilbud"
+  | "Endringsmelding"
+  | "FDV"
+  | "Tilleggsarbeid"
+  | "Faktura";
 
 type QuoteRow = {
   id: string;
@@ -22,7 +30,16 @@ type CertificateAsset = {
   height: number;
 };
 
-const units: Unit[] = ["rs", "m2", "stk", "timer"];
+const units: Unit[] = ["rs", "m2", "stk", "timer", "lm"];
+
+const documentTypes: DocumentType[] = [
+  "Pristilbud",
+  "Tilbud",
+  "Endringsmelding",
+  "FDV",
+  "Tilleggsarbeid",
+  "Faktura"
+];
 
 const logo = {
   src: "/brand/hm-malerservice-logo.png",
@@ -157,21 +174,27 @@ function CertificateStrip() {
 }
 
 export function QuoteGenerator() {
+  const [documentType, setDocumentType] = useState<DocumentType>("Pristilbud");
   const [project, setProject] = useState("");
   const [customer, setCustomer] = useState("");
   const [date, setDate] = useState(getTodayInputValue);
+  const [riggDriftPercent, setRiggDriftPercent] = useState(0);
   const [rows, setRows] = useState<QuoteRow[]>([createRow()]);
 
   const totals = useMemo(() => {
     const subtotal = rows.reduce((sum, row) => sum + row.quantity * row.price, 0);
-    const vat = subtotal * 0.25;
+    const riggDrift = subtotal * (riggDriftPercent / 100);
+    const subtotalWithRiggDrift = subtotal + riggDrift;
+    const vat = subtotalWithRiggDrift * 0.25;
 
     return {
       subtotal,
+      riggDrift,
+      subtotalWithRiggDrift,
       vat,
-      total: subtotal + vat
+      total: subtotalWithRiggDrift + vat
     };
-  }, [rows]);
+  }, [riggDriftPercent, rows]);
 
   function updateRow(id: string, changes: Partial<QuoteRow>) {
     setRows((currentRows) =>
@@ -199,13 +222,28 @@ export function QuoteGenerator() {
         <aside className="no-print h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-xs font-semibold uppercase text-slate-500">Internt verktøy</p>
-            <h1 className="mt-2 text-2xl font-semibold text-slate-950">Pristilbud</h1>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-950">{documentType}</h1>
           </div>
 
           <div className="mt-5 space-y-5">
             <section>
-              <SectionTitle eyebrow="Grunnlag" title="Prosjekt og kunde" />
+              <SectionTitle eyebrow="Grunnlag" title="Dokument og kunde" />
               <div className="mt-4 space-y-4">
+                <label className="block">
+                  <FieldLabel>Dokumenttype</FieldLabel>
+                  <select
+                    className="form-control"
+                    value={documentType}
+                    onChange={(event) => setDocumentType(event.target.value as DocumentType)}
+                  >
+                    {documentTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
                 <label className="block">
                   <FieldLabel>Prosjekt</FieldLabel>
                   <input
@@ -237,6 +275,32 @@ export function QuoteGenerator() {
                     type="date"
                   />
                 </label>
+
+                <label className="block">
+                  <FieldLabel>Rigg og drift %</FieldLabel>
+                  <div className="range-field">
+                    <input
+                      aria-label="Rigg og drift prosent"
+                      max="50"
+                      min="0"
+                      onChange={(event) => setRiggDriftPercent(Number(event.target.value))}
+                      step="0.5"
+                      type="range"
+                      value={riggDriftPercent}
+                    />
+                    <input
+                      className="form-control range-number"
+                      max="50"
+                      min="0"
+                      onChange={(event) =>
+                        setRiggDriftPercent(Math.min(50, Math.max(0, Number(event.target.value))))
+                      }
+                      step="0.5"
+                      type="number"
+                      value={riggDriftPercent}
+                    />
+                  </div>
+                </label>
               </div>
             </section>
 
@@ -244,8 +308,18 @@ export function QuoteGenerator() {
               <SectionTitle eyebrow="Kontroll" title="Totalsummer" />
               <div className="mt-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Sum eks mva</span>
+                  <span className="text-slate-500">Sum poster</span>
                   <span className="font-medium tabular-nums">{formatNok(totals.subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Rigg og drift ({formatNok(riggDriftPercent)}%)</span>
+                  <span className="font-medium tabular-nums">{formatNok(totals.riggDrift)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Sum eks mva</span>
+                  <span className="font-medium tabular-nums">
+                    {formatNok(totals.subtotalWithRiggDrift)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Mva (25%)</span>
@@ -260,7 +334,7 @@ export function QuoteGenerator() {
           </div>
 
           <button className="primary-button mt-5 w-full" onClick={generatePdf} type="button">
-            Generer pristilbud
+            Generer dokument
           </button>
         </aside>
 
@@ -270,7 +344,9 @@ export function QuoteGenerator() {
               <header className="document-header">
                 <div>
                   <BrandLogo />
-                  <p className="mt-5 text-xs font-semibold uppercase text-slate-500">PRISTILBUD</p>
+                  <p className="mt-5 text-xs font-semibold uppercase text-slate-500">
+                    {documentType}
+                  </p>
                   <h2 className="mt-1 text-3xl font-semibold text-slate-950">
                     {project || "Prosjektnavn"}
                   </h2>
@@ -288,7 +364,7 @@ export function QuoteGenerator() {
                 <div className="section-heading">
                   <div>
                     <p className="section-eyebrow">Kundegrunnlag</p>
-                    <h3>Prosjekt og kunde</h3>
+                    <h3>Dokument og kunde</h3>
                   </div>
                   <div className="date-pill">
                     <span>Dato</span>
@@ -297,6 +373,23 @@ export function QuoteGenerator() {
                 </div>
 
                 <div className="info-grid">
+                  <label className="info-field">
+                    <FieldLabel>Dokumenttype</FieldLabel>
+                    <select
+                      aria-label="Dokumenttype"
+                      className="form-control document-input"
+                      value={documentType}
+                      onChange={(event) => setDocumentType(event.target.value as DocumentType)}
+                    >
+                      {documentTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="print-value">{documentType}</span>
+                  </label>
+
                   <label className="info-field">
                     <FieldLabel>Prosjekt</FieldLabel>
                     <input
@@ -378,15 +471,15 @@ export function QuoteGenerator() {
                           <tr key={row.id}>
                             <td className="post-number">{index + 1}</td>
                             <td>
-                              <input
+                              <textarea
                                 aria-label={`Beskrivelse post ${index + 1}`}
-                                className="table-control"
-                                value={row.description}
+                                className="table-control description-control"
                                 onChange={(event) =>
                                   updateRow(row.id, { description: event.target.value })
                                 }
                                 placeholder="Beskrivelse av arbeid"
-                                type="text"
+                                rows={3}
+                                value={row.description}
                               />
                               <span className="print-value">{row.description}</span>
                             </td>
@@ -466,8 +559,16 @@ export function QuoteGenerator() {
 
                 <div className="totals-card">
                   <div>
-                    <span>Sum eks mva</span>
+                    <span>Sum poster</span>
                     <strong>{formatNok(totals.subtotal)}</strong>
+                  </div>
+                  <div>
+                    <span>Rigg og drift ({formatNok(riggDriftPercent)}%)</span>
+                    <strong>{formatNok(totals.riggDrift)}</strong>
+                  </div>
+                  <div>
+                    <span>Sum eks mva</span>
+                    <strong>{formatNok(totals.subtotalWithRiggDrift)}</strong>
                   </div>
                   <div>
                     <span>Mva (25%)</span>
