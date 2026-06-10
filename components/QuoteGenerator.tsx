@@ -267,6 +267,16 @@ export function QuoteGenerator() {
                 </label>
 
                 <label className="block">
+                  <FieldLabel>Dato</FieldLabel>
+                  <input
+                    className="form-control"
+                    value={date}
+                    onChange={(event) => setDate(event.target.value)}
+                    type="date"
+                  />
+                </label>
+
+                <label className="block">
                   <FieldLabel>Rigg og drift %</FieldLabel>
                   <div className="range-field">
                     <input
@@ -329,52 +339,32 @@ export function QuoteGenerator() {
         </aside>
 
         <section className="overflow-auto pb-10">
-          <div className="print-area mx-auto w-full max-w-7xl rounded-[28px] bg-white p-3 shadow-2xl shadow-slate-200/80">
+          <div className="print-area mx-auto w-fit rounded-[28px] bg-white p-3 shadow-2xl shadow-slate-200/80">
             <article className="a4-sheet">
               <header className="document-header">
-                <div className="document-header-logo">
+                <div>
                   <BrandLogo />
+                  <p className="mt-5 text-xs font-semibold uppercase text-slate-500">
+                    {documentType}
+                  </p>
+                  <h2 className="mt-1 text-3xl font-semibold text-slate-950">
+                    {project || "Prosjektnavn"}
+                  </h2>
                 </div>
 
-                <div className="document-header-title">
-                  <select
-                    aria-label="Dokumenttype"
-                    className="document-type-select"
-                    value={documentType}
-                    onChange={(event) => setDocumentType(event.target.value as DocumentType)}
-                  >
-                    {documentTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="print-value document-type-print">{documentType}</span>
+                <div>
+                  <div className="date-pill header-date">
+                    <span>Dato</span>
+                    <strong>{formatDateForDisplay(date)}</strong>
+                  </div>
+                  <div className="company-card">
+                    <p className="font-semibold text-slate-950">H &amp; M Malerservice AS</p>
+                    <p>Banevigsgt. 7, 4014 Stavanger</p>
+                    <p>Tel: 51 89 09 60 / Fax: 51 89 62 60</p>
+                    <p>www.hmmalerservice.no</p>
+                  </div>
                 </div>
-
-                <label className="date-pill header-date">
-                  <span>Dato</span>
-                  <input
-                    aria-label="Dato"
-                    className="date-input"
-                    value={date}
-                    onChange={(event) => setDate(event.target.value)}
-                    type="date"
-                  />
-                  <strong className="print-value">{formatDateForDisplay(date)}</strong>
-                </label>
               </header>
-
-              <section className="company-strip">
-                <div>
-                  <p>H &amp; M Malerservice AS</p>
-                  <span>Banevigsgt. 7, 4014 Stavanger</span>
-                </div>
-                <div>
-                  <span>Tel: 51 89 09 60 / Fax: 51 89 62 60</span>
-                  <span>www.hmmalerservice.no</span>
-                </div>
-              </section>
 
               <section className="document-section">
                 <div className="section-heading">
@@ -410,7 +400,6 @@ export function QuoteGenerator() {
                     />
                     <span className="print-value">{customer}</span>
                   </label>
-
                 </div>
               </section>
 
