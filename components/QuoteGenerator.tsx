@@ -94,6 +94,13 @@ function createRow(): QuoteRow {
   };
 }
 
+function capitalizeSentences(value: string) {
+  return value.replace(
+    /(^\s*|[.!?]\s*|\n\s*)([a-z\u00e6\u00f8\u00e5])/g,
+    (_, prefix: string, letter: string) => `${prefix}${letter.toLocaleUpperCase("nb-NO")}`
+  );
+}
+
 function FieldLabel({ children }: { children: ReactNode }) {
   return (
     <span className="mb-2 block text-xs font-semibold uppercase text-slate-500">
@@ -177,6 +184,9 @@ export function QuoteGenerator() {
   const [documentType, setDocumentType] = useState<DocumentType>("Pristilbud");
   const [project, setProject] = useState("");
   const [customer, setCustomer] = useState("");
+  const [contactPerson, setContactPerson] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [date, setDate] = useState(getTodayInputValue);
   const [riggDriftPercent, setRiggDriftPercent] = useState(0);
   const [additionalDescription, setAdditionalDescription] = useState("");
@@ -250,7 +260,7 @@ export function QuoteGenerator() {
                   <input
                     className="form-control"
                     value={project}
-                    onChange={(event) => setProject(event.target.value)}
+                    onChange={(event) => setProject(capitalizeSentences(event.target.value))}
                     placeholder="Prosjektnavn"
                     type="text"
                   />
@@ -261,9 +271,45 @@ export function QuoteGenerator() {
                   <input
                     className="form-control"
                     value={customer}
-                    onChange={(event) => setCustomer(event.target.value)}
+                    onChange={(event) => setCustomer(capitalizeSentences(event.target.value))}
                     placeholder="Kundenavn"
                     type="text"
+                  />
+                </label>
+
+                <label className="block">
+                  <FieldLabel>Kontaktperson</FieldLabel>
+                  <input
+                    className="form-control"
+                    onChange={(event) =>
+                      setContactPerson(capitalizeSentences(event.target.value))
+                    }
+                    placeholder="Kontaktperson"
+                    type="text"
+                    value={contactPerson}
+                  />
+                </label>
+
+                <label className="block">
+                  <FieldLabel>Telefon</FieldLabel>
+                  <input
+                    className="form-control"
+                    inputMode="tel"
+                    onChange={(event) => setPhone(event.target.value)}
+                    placeholder="Telefonnummer"
+                    type="tel"
+                    value={phone}
+                  />
+                </label>
+
+                <label className="block">
+                  <FieldLabel>Adresse</FieldLabel>
+                  <input
+                    className="form-control"
+                    onChange={(event) => setAddress(capitalizeSentences(event.target.value))}
+                    placeholder="Adresse"
+                    type="text"
+                    value={address}
                   />
                 </label>
 
@@ -374,33 +420,28 @@ export function QuoteGenerator() {
                   </div>
                 </div>
 
-                <div className="info-grid">
-                  <label className="info-field">
-                    <FieldLabel>Prosjekt</FieldLabel>
-                    <input
-                      aria-label="Prosjekt"
-                      className="form-control document-input"
-                      value={project}
-                      onChange={(event) => setProject(event.target.value)}
-                      placeholder="Prosjektnavn"
-                      type="text"
-                    />
-                    <span className="print-value">{project}</span>
-                  </label>
-
-                  <label className="info-field">
-                    <FieldLabel>Kunde</FieldLabel>
-                    <input
-                      aria-label="Kunde"
-                      className="form-control document-input"
-                      value={customer}
-                      onChange={(event) => setCustomer(event.target.value)}
-                      placeholder="Kundenavn"
-                      type="text"
-                    />
-                    <span className="print-value">{customer}</span>
-                  </label>
-                </div>
+                <dl className="project-info-list">
+                  <div>
+                    <dt>Prosjekt</dt>
+                    <dd>{project || "-"}</dd>
+                  </div>
+                  <div>
+                    <dt>Kunde</dt>
+                    <dd>{customer || "-"}</dd>
+                  </div>
+                  <div>
+                    <dt>Kontaktperson</dt>
+                    <dd>{contactPerson || "-"}</dd>
+                  </div>
+                  <div>
+                    <dt>Telefon</dt>
+                    <dd>{phone || "-"}</dd>
+                  </div>
+                  <div>
+                    <dt>Adresse</dt>
+                    <dd>{address || "-"}</dd>
+                  </div>
+                </dl>
               </section>
 
               <section className="document-section">
@@ -448,7 +489,9 @@ export function QuoteGenerator() {
                                 aria-label={`Beskrivelse post ${index + 1}`}
                                 className="table-control"
                                 onChange={(event) =>
-                                  updateRow(row.id, { description: event.target.value })
+                                  updateRow(row.id, {
+                                    description: capitalizeSentences(event.target.value)
+                                  })
                                 }
                                 placeholder="Beskrivelse av arbeid"
                                 type="text"
@@ -525,19 +568,26 @@ export function QuoteGenerator() {
                   </table>
                 </div>
 
-                <div className="additional-description">
-                  <FieldLabel>Tilleggsbeskrivelse</FieldLabel>
-                  <textarea
-                    aria-label="Tilleggsbeskrivelse"
-                    className="form-control additional-description-control"
-                    onChange={(event) => setAdditionalDescription(event.target.value)}
-                    placeholder="Utfyllende beskrivelse, endringsmelding eller annen dokumentasjon"
-                    rows={7}
-                    value={additionalDescription}
-                  />
-                  <span className="print-value additional-description-print">
-                    {additionalDescription}
-                  </span>
+              </section>
+
+              <section className="document-section offer-description-section">
+                <div className="section-heading">
+                  <div>
+                    <h3>BESKRIVELSE AV TILBUD / ENDRINGSMELDING</h3>
+                  </div>
+                </div>
+                <textarea
+                  aria-label="Beskrivelse av tilbud eller endringsmelding"
+                  className="form-control additional-description-control"
+                  onChange={(event) =>
+                    setAdditionalDescription(capitalizeSentences(event.target.value))
+                  }
+                  placeholder="Skriv en detaljert beskrivelse av tilbudet, endringen eller arbeidsomfanget"
+                  rows={10}
+                  value={additionalDescription}
+                />
+                <div className="print-value additional-description-print">
+                  {additionalDescription}
                 </div>
               </section>
 
