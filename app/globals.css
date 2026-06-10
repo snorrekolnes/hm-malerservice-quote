@@ -97,6 +97,21 @@ textarea {
   text-align: right;
 }
 
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.checkbox-field input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
 .primary-button,
 .secondary-button,
 .delete-button {
@@ -219,32 +234,21 @@ textarea {
   text-transform: uppercase;
 }
 
-.date-pill {
-  min-width: 88px;
-  border: 1px solid #bfdbfe;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  padding: 4px 8px;
+.document-meta {
+  margin-bottom: 12px;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.65;
   text-align: right;
 }
 
-.header-date {
-  margin-bottom: 8px;
+.document-meta p {
+  margin: 0;
 }
 
-.date-pill span {
-  display: block;
-  color: #64748b;
-  font-size: 8px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.date-pill strong {
-  display: block;
-  margin-top: 1px;
+.document-meta span {
   color: #0f172a;
-  font-size: 11px;
+  font-weight: 700;
 }
 
 .project-info-list {
@@ -280,6 +284,7 @@ textarea {
 .project-info-list dd {
   color: #0f172a;
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .line-items-card {
@@ -353,13 +358,14 @@ textarea {
 }
 
 .additional-description-control {
-  min-height: 230px;
+  min-height: 82px;
+  overflow: hidden;
   line-height: 1.6;
-  resize: vertical;
+  resize: none;
 }
 
 .additional-description-print {
-  min-height: 230px;
+  min-height: 0;
   border: 1px solid #d8dee8;
   border-radius: 10px;
   background: #ffffff;
@@ -529,6 +535,10 @@ textarea {
     white-space: pre-wrap;
   }
 
+  .additional-description-print {
+    min-height: 82px;
+  }
+
   .document-section,
   .line-items-card,
   .note-card,
@@ -542,10 +552,13 @@ textarea {
   }
 
   .quote-table tr,
-  .document-section,
   .summary-section,
   .document-footer {
     break-inside: avoid;
+  }
+
+  .offer-description-section {
+    break-inside: auto;
   }
 
   .quote-table tbody tr:hover {

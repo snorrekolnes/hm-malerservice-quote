@@ -41,6 +41,24 @@ const documentTypes: DocumentType[] = [
   "Faktura"
 ];
 
+const documentPrefixes: Record<DocumentType, string> = {
+  Pristilbud: "T",
+  Tilbud: "T",
+  Endringsmelding: "EM",
+  FDV: "FDV",
+  Tilleggsarbeid: "TA",
+  Faktura: "F"
+};
+
+const descriptionTitles: Record<DocumentType, string> = {
+  Pristilbud: "Beskrivelse av pristilbud",
+  Tilbud: "Beskrivelse av tilbud",
+  Endringsmelding: "Beskrivelse av endringsmelding",
+  FDV: "Beskrivelse",
+  Tilleggsarbeid: "Beskrivelse av tilleggsarbeid",
+  Faktura: "Beskrivelse"
+};
+
 const logo = {
   src: "/brand/hm-malerservice-logo.png",
   alt: "H M malerservice",
@@ -82,6 +100,10 @@ function getTodayInputValue() {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
+}
+
+function getDefaultDocumentNumber(type: DocumentType) {
+  return `${documentPrefixes[type]}-${new Date().getFullYear()}-001`;
 }
 
 function createRow(): QuoteRow {
@@ -182,14 +204,19 @@ function CertificateStrip() {
 
 export function QuoteGenerator() {
   const [documentType, setDocumentType] = useState<DocumentType>("Pristilbud");
+  const [documentNumber, setDocumentNumber] = useState(() =>
+    getDefaultDocumentNumber("Pristilbud")
+  );
   const [project, setProject] = useState("");
   const [customer, setCustomer] = useState("");
   const [contactPerson, setContactPerson] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [email, setEmail] = useState("");
   const [date, setDate] = useState(getTodayInputValue);
   const [riggDriftPercent, setRiggDriftPercent] = useState(0);
   const [additionalDescription, setAdditionalDescription] = useState("");
+  const [showDetailedDescription, setShowDetailedDescription] = useState(true);
   const [rows, setRows] = useState<QuoteRow[]>([createRow()]);
 
   const totals = useMemo(() => {
@@ -223,6 +250,12 @@ export function QuoteGenerator() {
     setRows((currentRows) => [...currentRows, createRow()]);
   }
 
+  function changeDocumentType(type: DocumentType) {
+    setDocumentType(type);
+    setDocumentNumber(getDefaultDocumentNumber(type));
+    setShowDetailedDescription(type !== "Faktura");
+  }
+
   function generatePdf() {
     window.print();
   }
@@ -245,7 +278,7 @@ export function QuoteGenerator() {
                   <select
                     className="form-control"
                     value={documentType}
-                    onChange={(event) => setDocumentType(event.target.value as DocumentType)}
+                    onChange={(event) => changeDocumentType(event.target.value as DocumentType)}
                   >
                     {documentTypes.map((type) => (
                       <option key={type} value={type}>
@@ -253,6 +286,17 @@ export function QuoteGenerator() {
                       </option>
                     ))}
                   </select>
+                </label>
+
+                <label className="block">
+                  <FieldLabel>Dokumentnummer</FieldLabel>
+                  <input
+                    className="form-control"
+                    onChange={(event) => setDocumentNumber(event.target.value.toUpperCase())}
+                    placeholder="T-2026-001"
+                    type="text"
+                    value={documentNumber}
+                  />
                 </label>
 
                 <label className="block">
@@ -303,12 +347,24 @@ export function QuoteGenerator() {
                 </label>
 
                 <label className="block">
-                  <FieldLabel>Adresse</FieldLabel>
+                  <FieldLabel>E-post</FieldLabel>
                   <input
                     className="form-control"
+                    inputMode="email"
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="navn@eksempel.no"
+                    type="email"
+                    value={email}
+                  />
+                </label>
+
+                <label className="block">
+                  <FieldLabel>Adresse</FieldLabel>
+                  <textarea
+                    className="form-control"
                     onChange={(event) => setAddress(capitalizeSentences(event.target.value))}
-                    placeholder="Adresse"
-                    type="text"
+                    placeholder={"Adresse\nPostnummer og sted"}
+                    rows={3}
                     value={address}
                   />
                 </label>
@@ -347,6 +403,15 @@ export function QuoteGenerator() {
                       value={riggDriftPercent}
                     />
                   </div>
+                </label>
+
+                <label className="checkbox-field">
+                  <input
+                    checked={showDetailedDescription}
+                    onChange={(event) => setShowDetailedDescription(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>Vis detaljert beskrivelse</span>
                 </label>
               </div>
             </section>
@@ -400,9 +465,13 @@ export function QuoteGenerator() {
                 </div>
 
                 <div>
-                  <div className="date-pill header-date">
-                    <span>Dato</span>
-                    <strong>{formatDateForDisplay(date)}</strong>
+                  <div className="document-meta">
+                    <p>
+                      <span>Dokumentnr:</span> {documentNumber || "-"}
+                    </p>
+                    <p>
+                      <span>Dato:</span> {formatDateForDisplay(date)}
+                    </p>
                   </div>
                   <div className="company-card">
                     <p className="font-semibold text-slate-950">H &amp; M Malerservice AS</p>
@@ -436,6 +505,10 @@ export function QuoteGenerator() {
                   <div>
                     <dt>Telefon</dt>
                     <dd>{phone || "-"}</dd>
+                  </div>
+                  <div>
+                    <dt>E-post</dt>
+                    <dd>{email || "-"}</dd>
                   </div>
                   <div>
                     <dt>Adresse</dt>
@@ -570,26 +643,32 @@ export function QuoteGenerator() {
 
               </section>
 
-              <section className="document-section offer-description-section">
-                <div className="section-heading">
-                  <div>
-                    <h3>BESKRIVELSE AV TILBUD / ENDRINGSMELDING</h3>
+              {showDetailedDescription && (
+                <section className="document-section offer-description-section">
+                  <div className="section-heading">
+                    <div>
+                      <h3>{descriptionTitles[documentType]}</h3>
+                    </div>
                   </div>
-                </div>
-                <textarea
-                  aria-label="Beskrivelse av tilbud eller endringsmelding"
-                  className="form-control additional-description-control"
-                  onChange={(event) =>
-                    setAdditionalDescription(capitalizeSentences(event.target.value))
-                  }
-                  placeholder="Skriv en detaljert beskrivelse av tilbudet, endringen eller arbeidsomfanget"
-                  rows={10}
-                  value={additionalDescription}
-                />
-                <div className="print-value additional-description-print">
-                  {additionalDescription}
-                </div>
-              </section>
+                  <textarea
+                    aria-label="Detaljert beskrivelse"
+                    className="form-control additional-description-control"
+                    onChange={(event) =>
+                      setAdditionalDescription(capitalizeSentences(event.target.value))
+                    }
+                    onInput={(event) => {
+                      event.currentTarget.style.height = "auto";
+                      event.currentTarget.style.height = `${event.currentTarget.scrollHeight}px`;
+                    }}
+                    placeholder="Skriv en detaljert beskrivelse av tilbudet, endringen eller arbeidsomfanget"
+                    rows={3}
+                    value={additionalDescription}
+                  />
+                  <div className="print-value additional-description-print">
+                    {additionalDescription}
+                  </div>
+                </section>
+              )}
 
               <section className="summary-section">
                 <div className="note-card">
