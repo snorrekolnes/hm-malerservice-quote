@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --ink: #171717;
+  --muted: #5f6368;
+  --line: #d7dbe0;
+  --soft: #f3f4f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #e8ebef;
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.screen-input {
+  width: 100%;
+  border: 1px solid #c9ced6;
+  background: #ffffff;
+  color: #171717;
+  padding: 8px 10px;
+  border-radius: 4px;
+  outline: none;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.screen-input:focus {
+  border-color: #6b7280;
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.14);
+}
+
+.print-value {
+  display: none;
+}
+
+.quote-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.quote-table th,
+.quote-table td {
+  border: 1px solid #9ca3af;
+  padding: 7px 8px;
+  vertical-align: top;
+}
+
+.quote-table th {
+  background: #eceff3;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.quote-table .text-right {
+  text-align: right;
+}
+
+.quote-table .text-center {
+  text-align: center;
+}
+
+.quote-table td {
+  font-size: 12px;
+}
+
+.a4-sheet {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 17mm 16mm 15mm;
+  background: #ffffff;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    width: 210mm;
+    min-height: 297mm;
+    background: #ffffff !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+  }
+
+  .a4-sheet {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 17mm 16mm 15mm;
+    box-shadow: none !important;
+  }
+
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
+  .screen-input {
+    display: none !important;
+  }
+
+  .print-value {
+    display: block;
+    min-height: 18px;
+    white-space: pre-wrap;
+  }
+
+  .quote-table {
+    break-inside: auto;
+  }
+
+  .quote-table tr {
+    break-inside: avoid;
+  }
+}
