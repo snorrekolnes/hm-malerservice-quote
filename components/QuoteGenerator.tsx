@@ -283,6 +283,75 @@ export function QuoteGenerator() {
   function generatePdf() {
     window.print();
   }
+  function saveDocument() {
+  const documentData = {
+    documentType,
+    documentNumber,
+    project,
+    customer,
+    contactPerson,
+    phone,
+    address,
+    email,
+    date,
+    riggDriftPercent,
+    additionalDescription,
+    showDetailedDescription,
+    rows
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(documentData, null, 2)],
+    { type: "application/json" }
+  );
+
+  const fileName = `${documentNumber || "dokument"}.hmdoc`;
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+}
+
+function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
+  const file = event.target.files?.[0];
+
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target?.result as string);
+
+      setDocumentType(data.documentType);
+      setDocumentNumber(data.documentNumber);
+      setProject(data.project);
+      setCustomer(data.customer);
+      setContactPerson(data.contactPerson);
+      setPhone(data.phone);
+      setAddress(data.address);
+      setEmail(data.email);
+      setDate(data.date);
+      setRiggDriftPercent(data.riggDriftPercent);
+      setAdditionalDescription(data.additionalDescription);
+      setShowDetailedDescription(data.showDetailedDescription);
+      setRows(data.rows);
+
+    } catch {
+      alert("Kunne ikke åpne dokumentet.");
+    }
+  };
+
+  reader.readAsText(file);
+}
 
   return (
     <main className="min-h-screen bg-[#f5f6f8] px-4 py-6 text-slate-950 sm:px-6 lg:px-8">
@@ -469,9 +538,35 @@ export function QuoteGenerator() {
             </section>
           </div>
 
-          <button className="primary-button mt-5 w-full" onClick={generatePdf} type="button">
-            Generer dokument
-          </button>
+          <div className="mt-5 space-y-3">
+
+  <button
+    className="secondary-button w-full"
+    onClick={saveDocument}
+    type="button"
+  >
+    💾 Lagre dokument
+  </button>
+
+  <label className="secondary-button w-full flex justify-center cursor-pointer">
+    📂 Åpne dokument
+    <input
+      hidden
+      accept=".hmdoc"
+      type="file"
+      onChange={loadDocument}
+    />
+  </label>
+
+  <button
+    className="primary-button w-full"
+    onClick={generatePdf}
+    type="button"
+  >
+    Generer dokument
+  </button>
+
+</div>
         </aside>
 
         <section className="overflow-auto pb-10">
