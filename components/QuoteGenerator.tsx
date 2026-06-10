@@ -136,7 +136,7 @@ function BrandLogo() {
   return (
     <Image
       alt={logo.alt}
-      className="h-auto w-[250px] object-contain"
+      className="h-auto w-[312px] object-contain"
       height={logo.height}
       onError={() => setHasLogo(false)}
       priority
@@ -179,6 +179,7 @@ export function QuoteGenerator() {
   const [customer, setCustomer] = useState("");
   const [date, setDate] = useState(getTodayInputValue);
   const [riggDriftPercent, setRiggDriftPercent] = useState(0);
+  const [additionalDescription, setAdditionalDescription] = useState("");
   const [rows, setRows] = useState<QuoteRow[]>([createRow()]);
 
   const totals = useMemo(() => {
@@ -218,7 +219,7 @@ export function QuoteGenerator() {
 
   return (
     <main className="min-h-screen bg-[#f5f6f8] px-4 py-6 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto grid max-w-[1520px] gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1520px] gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
         <aside className="no-print h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-xs font-semibold uppercase text-slate-500">Internt verktøy</p>
@@ -369,8 +370,7 @@ export function QuoteGenerator() {
               <section className="document-section">
                 <div className="section-heading">
                   <div>
-                    <p className="section-eyebrow">Kunde</p>
-                    <h3>Prosjekt</h3>
+                    <h3>Prosjektinformasjon</h3>
                   </div>
                 </div>
 
@@ -419,11 +419,11 @@ export function QuoteGenerator() {
                     <colgroup>
                       <col className="w-[52px]" />
                       <col />
-                      <col className="w-[90px]" />
-                      <col className="w-[96px]" />
-                      <col className="w-[110px]" />
-                      <col className="w-[120px]" />
-                      <col className="no-print w-[72px]" />
+                      <col className="w-[72px]" />
+                      <col className="w-[78px]" />
+                      <col className="w-[92px]" />
+                      <col className="w-[102px]" />
+                      <col className="no-print w-[62px]" />
                     </colgroup>
                     <thead>
                       <tr>
@@ -444,17 +444,19 @@ export function QuoteGenerator() {
                           <tr key={row.id}>
                             <td className="post-number">{index + 1}</td>
                             <td>
-                              <textarea
+                              <input
                                 aria-label={`Beskrivelse post ${index + 1}`}
-                                className="table-control description-control"
+                                className="table-control"
                                 onChange={(event) =>
                                   updateRow(row.id, { description: event.target.value })
                                 }
                                 placeholder="Beskrivelse av arbeid"
-                                rows={3}
+                                type="text"
                                 value={row.description}
                               />
-                              <span className="print-value">{row.description}</span>
+                              <span className="print-value line-description">
+                                {row.description}
+                              </span>
                             </td>
                             <td>
                               <select
@@ -521,6 +523,21 @@ export function QuoteGenerator() {
                       })}
                     </tbody>
                   </table>
+                </div>
+
+                <div className="additional-description">
+                  <FieldLabel>Tilleggsbeskrivelse</FieldLabel>
+                  <textarea
+                    aria-label="Tilleggsbeskrivelse"
+                    className="form-control additional-description-control"
+                    onChange={(event) => setAdditionalDescription(event.target.value)}
+                    placeholder="Utfyllende beskrivelse, endringsmelding eller annen dokumentasjon"
+                    rows={7}
+                    value={additionalDescription}
+                  />
+                  <span className="print-value additional-description-print">
+                    {additionalDescription}
+                  </span>
                 </div>
               </section>
 

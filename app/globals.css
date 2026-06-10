@@ -75,12 +75,6 @@ textarea {
   padding: 8px 10px;
 }
 
-.description-control {
-  min-height: 92px;
-  line-height: 1.5;
-  padding: 10px 12px;
-}
-
 .form-control:focus,
 .table-control:focus {
   border-color: var(--accent);
@@ -301,6 +295,7 @@ textarea {
   padding: 10px 12px;
   color: #0f172a;
   font-size: 13px;
+  height: 58px;
 }
 
 .quote-table tbody tr {
@@ -328,6 +323,29 @@ textarea {
 .line-total {
   font-weight: 700;
   text-align: right;
+}
+
+.line-description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.additional-description {
+  margin-top: 18px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 18px;
+}
+
+.additional-description-control {
+  min-height: 150px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.additional-description-print {
+  min-height: 120px;
+  line-height: 1.6;
 }
 
 .summary-section {
@@ -473,8 +491,7 @@ textarea {
   }
 
   .form-control,
-  .table-control,
-  .description-control {
+  .table-control {
     display: none !important;
   }
 
