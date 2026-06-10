@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { formatDateForDisplay, formatNok } from "@/lib/format";
 
-type Unit = "rs" | "m2" | "stk" | "timer" | "lm";
+type Unit = "rs" | "stk" | "lm" | "m²" | "m³" | "timer" | "dag";
 
 type DocumentType =
   | "Pristilbud"
@@ -30,7 +30,7 @@ type CertificateAsset = {
   height: number;
 };
 
-const units: Unit[] = ["rs", "m2", "stk", "timer", "lm"];
+const units: Unit[] = ["rs", "stk", "lm", "m²", "m³", "timer", "dag"];
 
 const documentTypes: DocumentType[] = [
   "Pristilbud",
@@ -234,6 +234,15 @@ export function QuoteGenerator() {
     };
   }, [riggDriftPercent, rows]);
 
+  const projectInformation = [
+    { label: "Prosjekt", value: project },
+    { label: "Kunde", value: customer },
+    { label: "Kontaktperson", value: contactPerson },
+    { label: "Telefon", value: phone },
+    { label: "E-post", value: email },
+    { label: "Adresse", value: address }
+  ].filter((field) => field.value.trim().length > 0);
+
   function updateRow(id: string, changes: Partial<QuoteRow>) {
     setRows((currentRows) =>
       currentRows.map((row) => (row.id === id ? { ...row, ...changes } : row))
@@ -411,7 +420,7 @@ export function QuoteGenerator() {
                     onChange={(event) => setShowDetailedDescription(event.target.checked)}
                     type="checkbox"
                   />
-                  <span>Vis detaljert beskrivelse</span>
+                  <span>Inkluder beskrivelse</span>
                 </label>
               </div>
             </section>
@@ -482,40 +491,24 @@ export function QuoteGenerator() {
                 </div>
               </header>
 
-              <section className="document-section">
-                <div className="section-heading">
-                  <div>
-                    <h3>Prosjektinformasjon</h3>
+              {projectInformation.length > 0 && (
+                <section className="document-section">
+                  <div className="section-heading">
+                    <div>
+                      <h3>Prosjektinformasjon</h3>
+                    </div>
                   </div>
-                </div>
 
-                <dl className="project-info-list">
-                  <div>
-                    <dt>Prosjekt</dt>
-                    <dd>{project || "-"}</dd>
-                  </div>
-                  <div>
-                    <dt>Kunde</dt>
-                    <dd>{customer || "-"}</dd>
-                  </div>
-                  <div>
-                    <dt>Kontaktperson</dt>
-                    <dd>{contactPerson || "-"}</dd>
-                  </div>
-                  <div>
-                    <dt>Telefon</dt>
-                    <dd>{phone || "-"}</dd>
-                  </div>
-                  <div>
-                    <dt>E-post</dt>
-                    <dd>{email || "-"}</dd>
-                  </div>
-                  <div>
-                    <dt>Adresse</dt>
-                    <dd>{address || "-"}</dd>
-                  </div>
-                </dl>
-              </section>
+                  <dl className="project-info-list">
+                    {projectInformation.map((field) => (
+                      <div key={field.label}>
+                        <dt>{field.label}</dt>
+                        <dd>{field.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              )}
 
               <section className="document-section">
                 <div className="section-heading">
@@ -544,7 +537,7 @@ export function QuoteGenerator() {
                         <th>Post</th>
                         <th>Beskrivelse</th>
                         <th>Enhet</th>
-                        <th className="text-right">Masse</th>
+                        <th className="text-right">Mengde</th>
                         <th className="text-right">Pris</th>
                         <th className="text-right">Sum</th>
                         <th className="no-print text-right">Handling</th>
@@ -593,7 +586,7 @@ export function QuoteGenerator() {
                             </td>
                             <td className="text-right">
                               <input
-                                aria-label={`Masse post ${index + 1}`}
+                                aria-label={`Mengde post ${index + 1}`}
                                 className="table-control text-right"
                                 min="0"
                                 step="0.01"

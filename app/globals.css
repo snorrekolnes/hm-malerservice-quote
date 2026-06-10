@@ -253,8 +253,8 @@ textarea {
 
 .project-info-list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px 28px;
+  grid-template-columns: 1fr;
+  gap: 8px;
   margin: 0;
 }
 
@@ -263,10 +263,6 @@ textarea {
   grid-template-columns: 102px 1fr;
   gap: 10px;
   min-width: 0;
-}
-
-.project-info-list div:last-child {
-  grid-column: 1 / -1;
 }
 
 .project-info-list dt,
@@ -476,13 +472,8 @@ textarea {
     transform-origin: top left;
   }
 
-  .project-info-list,
   .summary-section {
     grid-template-columns: 1fr;
-  }
-
-  .project-info-list div:last-child {
-    grid-column: auto;
   }
 }
 
