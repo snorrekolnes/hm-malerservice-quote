@@ -75,6 +75,17 @@ textarea {
   padding: 8px 10px;
 }
 
+.numeric-control {
+  min-width: 0;
+  padding-right: 8px;
+  padding-left: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.unit-control {
+  padding-right: 30px;
+}
+
 .form-control:focus,
 .table-control:focus {
   border-color: var(--accent);
@@ -447,12 +458,17 @@ textarea {
   line-height: 1.7;
 }
 
+.document-closing {
+  break-inside: avoid;
+}
+
 .certificate-strip {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 14px;
   max-width: 380px;
+  break-inside: avoid;
 }
 
 .certificate-image {
@@ -543,8 +559,9 @@ textarea {
   }
 
   .quote-table tr,
-  .summary-section,
-  .document-footer {
+  .document-closing,
+  .document-footer,
+  .certificate-strip {
     break-inside: avoid;
   }
 

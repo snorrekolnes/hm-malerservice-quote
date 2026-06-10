@@ -19,8 +19,8 @@ type QuoteRow = {
   id: string;
   description: string;
   unit: Unit;
-  quantity: number;
-  price: number;
+  quantity: string;
+  price: string;
 };
 
 type CertificateAsset = {
@@ -111,9 +111,20 @@ function createRow(): QuoteRow {
     id: crypto.randomUUID(),
     description: "",
     unit: "rs",
-    quantity: 1,
-    price: 0
+    quantity: "1",
+    price: "0"
   };
+}
+
+function parseNorwegianNumber(value: string) {
+  const normalized = value.replace(/\s/g, "").replace(",", ".");
+  const parsed = Number(normalized);
+
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isValidDecimalInput(value: string) {
+  return /^\d*(?:[,.]\d*)?$/.test(value);
 }
 
 function capitalizeSentences(value: string) {
@@ -220,7 +231,11 @@ export function QuoteGenerator() {
   const [rows, setRows] = useState<QuoteRow[]>([createRow()]);
 
   const totals = useMemo(() => {
-    const subtotal = rows.reduce((sum, row) => sum + row.quantity * row.price, 0);
+    const subtotal = rows.reduce(
+      (sum, row) =>
+        sum + parseNorwegianNumber(row.quantity) * parseNorwegianNumber(row.price),
+      0
+    );
     const riggDrift = subtotal * (riggDriftPercent / 100);
     const subtotalWithRiggDrift = subtotal + riggDrift;
     const vat = subtotalWithRiggDrift * 0.25;
@@ -526,9 +541,9 @@ export function QuoteGenerator() {
                     <colgroup>
                       <col className="w-[52px]" />
                       <col />
-                      <col className="w-[72px]" />
-                      <col className="w-[78px]" />
-                      <col className="w-[92px]" />
+                      <col className="w-[80px]" />
+                      <col className="w-[94px]" />
+                      <col className="w-[108px]" />
                       <col className="w-[102px]" />
                       <col className="no-print w-[62px]" />
                     </colgroup>
@@ -545,7 +560,9 @@ export function QuoteGenerator() {
                     </thead>
                     <tbody>
                       {rows.map((row, index) => {
-                        const lineTotal = row.quantity * row.price;
+                        const quantity = parseNorwegianNumber(row.quantity);
+                        const price = parseNorwegianNumber(row.price);
+                        const lineTotal = quantity * price;
 
                         return (
                           <tr key={row.id}>
@@ -570,7 +587,7 @@ export function QuoteGenerator() {
                             <td>
                               <select
                                 aria-label={`Enhet post ${index + 1}`}
-                                className="table-control"
+                                className="table-control unit-control"
                                 value={row.unit}
                                 onChange={(event) =>
                                   updateRow(row.id, { unit: event.target.value as Unit })
@@ -587,34 +604,32 @@ export function QuoteGenerator() {
                             <td className="text-right">
                               <input
                                 aria-label={`Mengde post ${index + 1}`}
-                                className="table-control text-right"
-                                min="0"
-                                step="0.01"
+                                className="table-control numeric-control text-right"
+                                inputMode="decimal"
                                 value={row.quantity}
-                                onChange={(event) =>
-                                  updateRow(row.id, {
-                                    quantity: Number(event.target.value)
-                                  })
-                                }
-                                type="number"
+                                onChange={(event) => {
+                                  if (isValidDecimalInput(event.target.value)) {
+                                    updateRow(row.id, { quantity: event.target.value });
+                                  }
+                                }}
+                                type="text"
                               />
-                              <span className="print-value text-right">{formatNok(row.quantity)}</span>
+                              <span className="print-value text-right">{formatNok(quantity)}</span>
                             </td>
                             <td className="text-right">
                               <input
                                 aria-label={`Pris post ${index + 1}`}
-                                className="table-control text-right"
-                                min="0"
-                                step="0.01"
+                                className="table-control numeric-control text-right"
+                                inputMode="decimal"
                                 value={row.price}
-                                onChange={(event) =>
-                                  updateRow(row.id, {
-                                    price: Number(event.target.value)
-                                  })
-                                }
-                                type="number"
+                                onChange={(event) => {
+                                  if (isValidDecimalInput(event.target.value)) {
+                                    updateRow(row.id, { price: event.target.value });
+                                  }
+                                }}
+                                type="text"
                               />
-                              <span className="print-value text-right">{formatNok(row.price)}</span>
+                              <span className="print-value text-right">{formatNok(price)}</span>
                             </td>
                             <td className="line-total">{formatNok(lineTotal)}</td>
                             <td className="no-print text-right">
@@ -663,43 +678,45 @@ export function QuoteGenerator() {
                 </section>
               )}
 
-              <section className="summary-section">
-                <div className="note-card">
-                  <p>Det ble gitt en forlengelse av driften på 0 dager på grunn av endringer.</p>
-                  <p>Prisen inkluderer materialer og arbeid.</p>
-                </div>
+              <div className="document-closing">
+                <section className="summary-section">
+                  <div className="note-card">
+                    <p>Det ble gitt en forlengelse av driften på 0 dager på grunn av endringer.</p>
+                    <p>Prisen inkluderer materialer og arbeid.</p>
+                  </div>
 
-                <div className="totals-card">
-                  <div>
-                    <span>Sum poster</span>
-                    <strong>{formatNok(totals.subtotal)}</strong>
+                  <div className="totals-card">
+                    <div>
+                      <span>Sum poster</span>
+                      <strong>{formatNok(totals.subtotal)}</strong>
+                    </div>
+                    <div>
+                      <span>Rigg og drift ({formatNok(riggDriftPercent)}%)</span>
+                      <strong>{formatNok(totals.riggDrift)}</strong>
+                    </div>
+                    <div>
+                      <span>Sum eks mva</span>
+                      <strong>{formatNok(totals.subtotalWithRiggDrift)}</strong>
+                    </div>
+                    <div>
+                      <span>Mva (25%)</span>
+                      <strong>{formatNok(totals.vat)}</strong>
+                    </div>
+                    <div className="grand-total">
+                      <span>Sum inkl mva</span>
+                      <strong>{formatNok(totals.total)}</strong>
+                    </div>
                   </div>
-                  <div>
-                    <span>Rigg og drift ({formatNok(riggDriftPercent)}%)</span>
-                    <strong>{formatNok(totals.riggDrift)}</strong>
-                  </div>
-                  <div>
-                    <span>Sum eks mva</span>
-                    <strong>{formatNok(totals.subtotalWithRiggDrift)}</strong>
-                  </div>
-                  <div>
-                    <span>Mva (25%)</span>
-                    <strong>{formatNok(totals.vat)}</strong>
-                  </div>
-                  <div className="grand-total">
-                    <span>Sum inkl mva</span>
-                    <strong>{formatNok(totals.total)}</strong>
-                  </div>
-                </div>
-              </section>
+                </section>
 
-              <footer className="document-footer">
-                <div>
-                  <p>Vennlig hilsen</p>
-                  <p className="mt-8 font-semibold text-slate-950">H &amp; M Malerservice AS</p>
-                </div>
-                <CertificateStrip />
-              </footer>
+                <footer className="document-footer">
+                  <div>
+                    <p>Vennlig hilsen</p>
+                    <p className="mt-8 font-semibold text-slate-950">H &amp; M Malerservice AS</p>
+                  </div>
+                  <CertificateStrip />
+                </footer>
+              </div>
             </article>
           </div>
         </section>
