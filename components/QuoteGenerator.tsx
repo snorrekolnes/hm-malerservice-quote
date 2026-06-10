@@ -227,7 +227,7 @@ export function QuoteGenerator() {
   const [date, setDate] = useState(getTodayInputValue);
   const [riggDriftPercent, setRiggDriftPercent] = useState(0);
   const [additionalDescription, setAdditionalDescription] = useState("");
-  const [showDetailedDescription, setShowDetailedDescription] = useState(true);
+  const [showDetailedDescription, setShowDetailedDescription] = useState(false);
   const [rows, setRows] = useState<QuoteRow[]>([createRow()]);
 
   const totals = useMemo(() => {
@@ -636,9 +636,9 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
                     <colgroup>
                       <col className="w-[52px]" />
                       <col />
-                      <col className="w-[80px]" />
-                      <col className="w-[94px]" />
-                      <col className="w-[108px]" />
+                      <col className="w-[100px]" />
+                      <col className="w-[120px]" />
+                      <col className="w-[120px]" />
                       <col className="w-[102px]" />
                       <col className="no-print w-[62px]" />
                     </colgroup>
@@ -746,7 +746,7 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
 
               </section>
 
-              {showDetailedDescription && (
+              {showDetailedDescription && additionalDescription.trim().length > 0  && (
                 <section className="document-section offer-description-section">
                   <div className="section-heading">
                     <div>

@@ -83,6 +83,8 @@ textarea {
 }
 
 .unit-control {
+  min-width: 90px;
+  width: 90px;
   padding-right: 30px;
 }
 
