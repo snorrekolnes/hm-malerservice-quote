@@ -227,7 +227,7 @@ export function QuoteGenerator() {
 
           <div className="mt-5 space-y-5">
             <section>
-              <SectionTitle eyebrow="Grunnlag" title="Dokument og kunde" />
+              <SectionTitle eyebrow="Kunde" title="Prosjekt" />
               <div className="mt-4 space-y-4">
                 <label className="block">
                   <FieldLabel>Dokumenttype</FieldLabel>
@@ -263,16 +263,6 @@ export function QuoteGenerator() {
                     onChange={(event) => setCustomer(event.target.value)}
                     placeholder="Kundenavn"
                     type="text"
-                  />
-                </label>
-
-                <label className="block">
-                  <FieldLabel>Dato</FieldLabel>
-                  <input
-                    className="form-control"
-                    value={date}
-                    onChange={(event) => setDate(event.target.value)}
-                    type="date"
                   />
                 </label>
 
@@ -339,57 +329,62 @@ export function QuoteGenerator() {
         </aside>
 
         <section className="overflow-auto pb-10">
-          <div className="print-area mx-auto w-fit rounded-[28px] bg-white p-3 shadow-2xl shadow-slate-200/80">
+          <div className="print-area mx-auto w-full max-w-7xl rounded-[28px] bg-white p-3 shadow-2xl shadow-slate-200/80">
             <article className="a4-sheet">
               <header className="document-header">
-                <div>
+                <div className="document-header-logo">
                   <BrandLogo />
-                  <p className="mt-5 text-xs font-semibold uppercase text-slate-500">
-                    {documentType}
-                  </p>
-                  <h2 className="mt-1 text-3xl font-semibold text-slate-950">
-                    {project || "Prosjektnavn"}
-                  </h2>
                 </div>
 
-                <div className="company-card">
-                  <p className="font-semibold text-slate-950">H &amp; M Malerservice AS</p>
-                  <p>Banevigsgt. 7, 4014 Stavanger</p>
-                  <p>Tel: 51 89 09 60 / Fax: 51 89 62 60</p>
-                  <p>www.hmmalerservice.no</p>
+                <div className="document-header-title">
+                  <select
+                    aria-label="Dokumenttype"
+                    className="document-type-select"
+                    value={documentType}
+                    onChange={(event) => setDocumentType(event.target.value as DocumentType)}
+                  >
+                    {documentTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="print-value document-type-print">{documentType}</span>
                 </div>
+
+                <label className="date-pill header-date">
+                  <span>Dato</span>
+                  <input
+                    aria-label="Dato"
+                    className="date-input"
+                    value={date}
+                    onChange={(event) => setDate(event.target.value)}
+                    type="date"
+                  />
+                  <strong className="print-value">{formatDateForDisplay(date)}</strong>
+                </label>
               </header>
+
+              <section className="company-strip">
+                <div>
+                  <p>H &amp; M Malerservice AS</p>
+                  <span>Banevigsgt. 7, 4014 Stavanger</span>
+                </div>
+                <div>
+                  <span>Tel: 51 89 09 60 / Fax: 51 89 62 60</span>
+                  <span>www.hmmalerservice.no</span>
+                </div>
+              </section>
 
               <section className="document-section">
                 <div className="section-heading">
                   <div>
-                    <p className="section-eyebrow">Kundegrunnlag</p>
-                    <h3>Dokument og kunde</h3>
-                  </div>
-                  <div className="date-pill">
-                    <span>Dato</span>
-                    <strong>{formatDateForDisplay(date)}</strong>
+                    <p className="section-eyebrow">Kunde</p>
+                    <h3>Prosjekt</h3>
                   </div>
                 </div>
 
                 <div className="info-grid">
-                  <label className="info-field">
-                    <FieldLabel>Dokumenttype</FieldLabel>
-                    <select
-                      aria-label="Dokumenttype"
-                      className="form-control document-input"
-                      value={documentType}
-                      onChange={(event) => setDocumentType(event.target.value as DocumentType)}
-                    >
-                      {documentTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="print-value">{documentType}</span>
-                  </label>
-
                   <label className="info-field">
                     <FieldLabel>Prosjekt</FieldLabel>
                     <input
@@ -416,17 +411,6 @@ export function QuoteGenerator() {
                     <span className="print-value">{customer}</span>
                   </label>
 
-                  <label className="info-field">
-                    <FieldLabel>Dato</FieldLabel>
-                    <input
-                      aria-label="Dato"
-                      className="form-control document-input"
-                      value={date}
-                      onChange={(event) => setDate(event.target.value)}
-                      type="date"
-                    />
-                    <span className="print-value">{formatDateForDisplay(date)}</span>
-                  </label>
                 </div>
               </section>
 
