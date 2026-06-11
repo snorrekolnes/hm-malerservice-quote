@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { formatDateForDisplay, formatNok } from "@/lib/format";
 
 type Unit = "rs" | "stk" | "lm" | "m²" | "m³" | "timer" | "dag";
@@ -56,6 +56,7 @@ type Employee = {
   id: string;
   name: string;
   title: string;
+  title2?: string;
   phone: string;
   email: string;
   signature: string;
@@ -71,12 +72,12 @@ const employees: Employee[] = [
     signature: "/signatures/lukasz.png"
   },
   {
-    id: "ole-kristian",
-    name: "Ole Kristian Åserød",
-    title: "Avdelingsleder Rehabilitering\nHovedverneombud",
-    phone: "+47 930 68 386",
-    email: "",
-    signature: "/signatures/ole-kristian.png"
+  id: "ole-kristian",
+  name: "Ole Kristian Åserød",
+  title: "Avdelingsleder Rehabilitering & Hovedverneombud",
+  phone: "+47 930 68 386",
+  email: "...",
+  signature: "/signatures/ole.png"
   },
   {
     id: "sissel",
@@ -105,6 +106,7 @@ const documentPrefixes: Record<DocumentType, string> = {
   Faktura: "F"
 };
 
+
 const descriptionTitles: Record<DocumentType, string> = {
   Pristilbud: "Beskrivelse av pristilbud",
   Tilbud: "Beskrivelse av tilbud",
@@ -123,29 +125,35 @@ const logo = {
 
 const certificates: CertificateAsset[] = [
   {
-    src: "/brand/handverksgruppen.png",
-    alt: "Håndverksgruppen",
-    width: 600,
-    height: 196
-  },
-  {
     src: "/brand/miljofyrtarn.png",
     alt: "Miljøfyrtårn",
     width: 332,
-    height: 268
+    height: 268,
   },
   {
     src: "/brand/godkjent-laerebedrift.png",
     alt: "Godkjent lærebedrift",
     width: 826,
-    height: 824
+    height: 824,
+  },
+  {
+    src: "/brand/handverksgruppen.png",
+    alt: "Håndverksgruppen",
+    width: 600,
+    height: 196,
+  },
+  {
+    src: "/brand/sentralt.png",
+    alt: "Sentralt godkjent",
+    width: 600,
+    height: 600,
   },
   {
     src: "/brand/mester.png",
     alt: "Mester",
     width: 784,
-    height: 672
-  }
+    height: 672,
+  },
 ];
 
 function getTodayInputValue() {
@@ -273,6 +281,9 @@ export function QuoteGenerator() {
   const [selectedEmployee, setSelectedEmployee] = useState(
   employees[0]
 );
+const [isLoaded, setIsLoaded] = useState(false);
+  const employee = selectedEmployee;
+
   const [documentNumber, setDocumentNumber] = useState(() =>
     getDefaultDocumentNumber("Pristilbud")
   );
@@ -287,6 +298,98 @@ export function QuoteGenerator() {
   const [additionalDescription, setAdditionalDescription] = useState("");
   const [showDetailedDescription, setShowDetailedDescription] = useState(false);
   const [rows, setRows] = useState<QuoteRow[]>([createRow()]);
+  function newDocument() {
+  localStorage.removeItem("hm-quote-draft");
+
+  setDocumentType("Pristilbud");
+  setDocumentNumber(getDefaultDocumentNumber("Pristilbud"));
+
+  setProject("");
+  setCustomer("");
+  setContactPerson("");
+  setPhone("");
+  setAddress("");
+  setEmail("");
+
+  setDate(getTodayInputValue());
+
+  setRiggDriftPercent(0);
+  setAdditionalDescription("");
+  setShowDetailedDescription(false);
+
+  setRows([createRow()]);
+}
+  useEffect(() => {
+     if (!isLoaded) return;
+    console.log("AUTOSAVE");
+  localStorage.setItem(
+    "hm-quote-draft",
+    JSON.stringify({
+      selectedEmployee,
+      documentType,
+      documentNumber,
+      project,
+      customer,
+      contactPerson,
+      phone,
+      address,
+      email,
+      date,
+      riggDriftPercent,
+      additionalDescription,
+      showDetailedDescription,
+      rows
+    })
+  );
+}, [
+  selectedEmployee,
+  documentType,
+  documentNumber,
+  project,
+  customer,
+  contactPerson,
+  phone,
+  address,
+  email,
+  date,
+  riggDriftPercent,
+  additionalDescription,
+  showDetailedDescription,
+  rows
+]);
+useEffect(() => {
+  const saved = localStorage.getItem("hm-quote-draft");
+
+  if (!saved) {
+    setIsLoaded(true);
+    return;
+  }
+
+  try {
+    const data = JSON.parse(saved);
+
+    if (data.selectedEmployee) {
+      setSelectedEmployee(data.selectedEmployee);
+    }
+
+    setDocumentType(data.documentType);
+    setDocumentNumber(data.documentNumber);
+    setProject(data.project);
+    setCustomer(data.customer);
+    setContactPerson(data.contactPerson);
+    setPhone(data.phone);
+    setAddress(data.address);
+    setEmail(data.email);
+    setDate(data.date);
+    setRiggDriftPercent(data.riggDriftPercent);
+    setAdditionalDescription(data.additionalDescription);
+    setShowDetailedDescription(data.showDetailedDescription);
+    setRows(data.rows);
+
+  } finally {
+    setIsLoaded(true);
+  }
+}, []);
 
   const totals = useMemo(() => {
     const subtotal = rows.reduce(
@@ -380,6 +483,7 @@ export function QuoteGenerator() {
 }
 
 function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
+  
   const file = event.target.files?.[0];
 
   if (!file) return;
@@ -626,7 +730,13 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
           </div>
 
           <div className="mt-5 space-y-3">
-
+<button
+  type="button"
+  className="secondary-button w-full"
+  onClick={newDocument}
+>
+  Nytt dokument
+</button>
   <button
     className="secondary-button w-full"
     onClick={saveDocument}
@@ -941,28 +1051,59 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
                   </div>
                 </section>
 
-                <footer className="document-footer">
-                  <div>
-  <p>Vennlig hilsen</p>
+                <footer className="document-footer signature-footer">
+  <div className="signature-card">
+    <div className="signature-top">
+      <div className="signature-logo">
+        <img
+          src="/signature/maler.png"
+          alt="H&M Malerservice"
+        />
+      </div>
 
-  <div className="mt-6">
-    <p className="font-semibold text-slate-950">
-      {selectedEmployee.name}
-    </p>
+      <div className="signature-details">
+        <p className="signature-greeting">
+          Med vennlig hilsen
+        </p>
 
-    <p style={{ whiteSpace: "pre-line" }}>
-      {selectedEmployee.title}
-    </p>
+        <h3>{employee.name}</h3>
 
-    <p>{selectedEmployee.phone}</p>
+        <div className="signature-line" />
 
-    <p className="mt-3 font-semibold text-slate-950">
-      H &amp; M Malerservice AS
-    </p>
-  </div>
+        <p className="signature-title">
+          {employee.title}
+        </p>
+
+        {employee.title2 && (
+          <p className="signature-title">
+            {employee.title2}
+          </p>
+        )}
+
+        <p className="signature-phone">
+          {employee.phone}
+        </p>
+
+        <div className="signature-company">
+          <strong>H &amp; M Malerservice AS</strong>
+          <p>Badehusgaten 6, 4014 Stavanger</p>
+          <p>Organisasjonsnummer: 923 391 568</p>
+        </div>
+      </div>
+    </div>
+
+    <div className="signature-strip">
+  <img
+    src="/signature/hg-strip.png"
+    alt="Sertifiseringer"
+  />
 </div>
-                  <CertificateStrip />
-                </footer>
+
+<div className="signature-certificates">
+  <CertificateStrip />
+</div>
+  </div>
+</footer>
               </div>
             </article>
           </div>
