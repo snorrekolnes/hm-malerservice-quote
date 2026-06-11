@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { formatDateForDisplay, formatNok } from "@/lib/format";
 
 type Unit = "rs" | "stk" | "lm" | "m²" | "m³" | "timer" | "dag";
@@ -31,6 +31,18 @@ type CertificateAsset = {
 };
 
 const units: Unit[] = ["rs", "stk", "lm", "m²", "m³", "timer", "dag"];
+const noteTexts: Record<DocumentType, string> = {
+  Pristilbud: "Prisen inkluderer materialer og arbeid.",
+  Tilbud: "Prisen inkluderer materialer og arbeid.",
+  Endringsmelding:
+    "Det ble gitt en forlengelse av driften på 0 dager på grunn av endringer.",
+  FDV:
+    "Dokumentasjon for utført arbeid og benyttede produkter.",
+  Tilleggsarbeid:
+    "Prisen inkluderer materialer og arbeid.",
+  Faktura:
+    "Faktura for utført arbeid."
+};
 
 const documentTypes: DocumentType[] = [
   "Pristilbud",
@@ -39,6 +51,49 @@ const documentTypes: DocumentType[] = [
   "FDV",
   "Tilleggsarbeid",
   "Faktura"
+];
+type Employee = {
+  id: string;
+  name: string;
+  title: string;
+  phone: string;
+  email: string;
+  signature: string;
+};
+
+const employees: Employee[] = [
+  {
+    id: "lukasz",
+    name: "Lukasz Kosewski",
+    title: "Prosjektleder",
+    phone: "+47 925 15 319",
+    email: "",
+    signature: "/signatures/lukasz.png"
+  },
+  {
+    id: "ole-kristian",
+    name: "Ole Kristian Åserød",
+    title: "Avdelingsleder Rehabilitering\nHovedverneombud",
+    phone: "+47 930 68 386",
+    email: "",
+    signature: "/signatures/ole-kristian.png"
+  },
+  {
+    id: "sissel",
+    name: "Sissel Baade Bie",
+    title: "Økonomimedarbeider",
+    phone: "+47 41 38 40 20",
+    email: "",
+    signature: "/signatures/sissel.png"
+  },
+  {
+    id: "magnor",
+    name: "Magnor Kolnes",
+    title: "Daglig leder",
+    phone: "+47 930 68 380",
+    email: "",
+    signature: "/signatures/magnor.png"
+  }
 ];
 
 const documentPrefixes: Record<DocumentType, string> = {
@@ -215,6 +270,9 @@ function CertificateStrip() {
 
 export function QuoteGenerator() {
   const [documentType, setDocumentType] = useState<DocumentType>("Pristilbud");
+  const [selectedEmployee, setSelectedEmployee] = useState(
+  employees[0]
+);
   const [documentNumber, setDocumentNumber] = useState(() =>
     getDefaultDocumentNumber("Pristilbud")
   );
@@ -285,6 +343,7 @@ export function QuoteGenerator() {
   }
   function saveDocument() {
   const documentData = {
+    selectedEmployee,
     documentType,
     documentNumber,
     project,
@@ -330,6 +389,9 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
   reader.onload = (e) => {
     try {
       const data = JSON.parse(e.target?.result as string);
+      if (data.selectedEmployee) {
+  setSelectedEmployee(data.selectedEmployee);
+}
 
       setDocumentType(data.documentType);
       setDocumentNumber(data.documentNumber);
@@ -364,7 +426,32 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
 
           <div className="mt-5 space-y-5">
             <section>
-              <SectionTitle eyebrow="Kunde" title="Prosjekt" />
+<div className="mb-5">
+  <FieldLabel>Ansvarlig</FieldLabel>
+
+  <select
+    className="form-control"
+    value={selectedEmployee.id}
+    onChange={(event) => {
+      const employee = employees.find(
+        (emp) => emp.id === event.target.value
+      );
+
+      if (employee) {
+        setSelectedEmployee(employee);
+      }
+    }}
+  >
+    {employees.map((employee) => (
+      <option
+        key={employee.id}
+        value={employee.id}
+      >
+        {employee.name}
+      </option>
+    ))}
+  </select>
+</div>
               <div className="mt-4 space-y-4">
                 <label className="block">
                   <FieldLabel>Dokumenttype</FieldLabel>
@@ -596,7 +683,15 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
                     <p className="font-semibold text-slate-950">H &amp; M Malerservice AS</p>
                     <p>Banevigsgt. 7, 4014 Stavanger</p>
                     <p>Tel: 51 89 09 60 / Fax: 51 89 62 60</p>
-                    <p>www.hmmalerservice.no</p>
+                    <p>
+  <a
+    href="https://www.hmmalerservice.no"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    www.hmmalerservice.no
+  </a>
+</p>
                   </div>
                 </div>
               </header>
@@ -613,7 +708,19 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
                     {projectInformation.map((field) => (
                       <div key={field.label}>
                         <dt>{field.label}</dt>
-                        <dd>{field.value}</dd>
+                        <dd>
+  {field.label === "E-post" ? (
+    <a href={`mailto:${field.value}`}>
+      {field.value}
+    </a>
+  ) : field.label === "Telefon" ? (
+    <a href={`tel:${field.value}`}>
+      {field.value}
+    </a>
+  ) : (
+    field.value
+  )}
+</dd>
                       </div>
                     ))}
                   </dl>
@@ -633,25 +740,24 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
 
                 <div className="line-items-card">
                   <table className="quote-table">
-                    <colgroup>
-                      <col className="w-[52px]" />
-                      <col />
-                      <col className="w-[100px]" />
-                      <col className="w-[120px]" />
-                      <col className="w-[120px]" />
-                      <col className="w-[102px]" />
-                      <col className="no-print w-[62px]" />
-                    </colgroup>
+                   <colgroup>
+  <col className="w-[52px]" />
+  <col className="w-[120px]" />
+  <col className="w-[120px]" />
+  <col className="w-[120px]" />
+  <col className="w-[120px]" />
+  <col className="no-print w-[70px]" />
+</colgroup>
                     <thead>
                       <tr>
-                        <th>Post</th>
-                        <th>Beskrivelse</th>
-                        <th>Enhet</th>
-                        <th className="text-right">Mengde</th>
-                        <th className="text-right">Pris</th>
-                        <th className="text-right">Sum</th>
-                        <th className="no-print text-right">Handling</th>
-                      </tr>
+  <th>Post</th>
+  <th>Enhet</th>
+  <th className="text-right">Mengde</th>
+  <th className="text-right">Enhetspris</th>
+  <th className="text-right">Sum</th>
+  <th className="no-print text-right">Handling</th>
+</tr>
+
                     </thead>
                     <tbody>
                       {rows.map((row, index) => {
@@ -660,84 +766,116 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
                         const lineTotal = quantity * price;
 
                         return (
-                          <tr key={row.id}>
-                            <td className="post-number">{index + 1}</td>
-                            <td>
-                              <input
-                                aria-label={`Beskrivelse post ${index + 1}`}
-                                className="table-control"
-                                onChange={(event) =>
-                                  updateRow(row.id, {
-                                    description: capitalizeSentences(event.target.value)
-                                  })
-                                }
-                                placeholder="Beskrivelse av arbeid"
-                                type="text"
-                                value={row.description}
-                              />
-                              <span className="print-value line-description">
-                                {row.description}
-                              </span>
-                            </td>
-                            <td>
-                              <select
-                                aria-label={`Enhet post ${index + 1}`}
-                                className="table-control unit-control"
-                                value={row.unit}
-                                onChange={(event) =>
-                                  updateRow(row.id, { unit: event.target.value as Unit })
-                                }
-                              >
-                                {units.map((unit) => (
-                                  <option key={unit} value={unit}>
-                                    {unit}
-                                  </option>
-                                ))}
-                              </select>
-                              <span className="print-value">{row.unit}</span>
-                            </td>
-                            <td className="text-right">
-                              <input
-                                aria-label={`Mengde post ${index + 1}`}
-                                className="table-control numeric-control text-right"
-                                inputMode="decimal"
-                                value={row.quantity}
-                                onChange={(event) => {
-                                  if (isValidDecimalInput(event.target.value)) {
-                                    updateRow(row.id, { quantity: event.target.value });
-                                  }
-                                }}
-                                type="text"
-                              />
-                              <span className="print-value text-right">{formatNok(quantity)}</span>
-                            </td>
-                            <td className="text-right">
-                              <input
-                                aria-label={`Pris post ${index + 1}`}
-                                className="table-control numeric-control text-right"
-                                inputMode="decimal"
-                                value={row.price}
-                                onChange={(event) => {
-                                  if (isValidDecimalInput(event.target.value)) {
-                                    updateRow(row.id, { price: event.target.value });
-                                  }
-                                }}
-                                type="text"
-                              />
-                              <span className="print-value text-right">{formatNok(price)}</span>
-                            </td>
-                            <td className="line-total">{formatNok(lineTotal)}</td>
-                            <td className="no-print text-right">
-                              <button
-                                className="delete-button"
-                                disabled={rows.length === 1}
-                                onClick={() => removeRow(row.id)}
-                                type="button"
-                              >
-                                Slett
-                              </button>
-                            </td>
-                          </tr>
+                          <Fragment key={row.id}>
+    <tr key={row.id}>
+     <td className="post-number">
+  <div>{index + 1}</div>
+
+  
+</td>
+
+      <td>
+        <select
+          aria-label={`Enhet post ${index + 1}`}
+          className="table-control unit-control"
+          value={row.unit}
+          onChange={(event) =>
+            updateRow(row.id, { unit: event.target.value as Unit })
+          }
+        >
+          {units.map((unit) => (
+            <option key={unit} value={unit}>
+              {unit}
+            </option>
+          ))}
+        </select>
+        <span className="print-value">{row.unit}</span>
+      </td>
+
+      <td className="text-right">
+        <input
+          aria-label={`Mengde post ${index + 1}`}
+          className="table-control numeric-control text-right"
+          inputMode="decimal"
+          value={row.quantity}
+          onChange={(event) => {
+            if (isValidDecimalInput(event.target.value)) {
+              updateRow(row.id, { quantity: event.target.value });
+            }
+          }}
+          type="text"
+        />
+        <span className="print-value text-right">
+          {formatNok(quantity)}
+        </span>
+      </td>
+
+      <td className="text-right">
+        <input
+          aria-label={`Pris post ${index + 1}`}
+          className="table-control numeric-control text-right"
+          inputMode="decimal"
+          value={row.price}
+          onChange={(event) => {
+            if (isValidDecimalInput(event.target.value)) {
+              updateRow(row.id, { price: event.target.value });
+            }
+          }}
+          type="text"
+        />
+        <span className="print-value text-right">
+  {formatNok(price)} kr
+</span>
+      </td>
+
+      <td className="line-total">{formatNok(lineTotal)} kr</td>
+
+      <td className="no-print text-right">
+        <button
+          className="delete-button"
+          disabled={rows.length === 1}
+          onClick={() => removeRow(row.id)}
+          type="button"
+        >
+          Slett
+        </button>
+      </td>
+    </tr>
+    
+
+<tr className="no-print">
+  <td></td>
+
+  <td colSpan={5}>
+    <input
+      aria-label={`Beskrivelse post ${index + 1}`}
+      className="table-control"
+      onChange={(event) =>
+        updateRow(row.id, {
+          description: capitalizeSentences(event.target.value)
+        })
+      }
+      placeholder="Beskrivelse av arbeid"
+      type="text"
+      value={row.description}
+    />
+    
+  </td>
+</tr>
+{row.description?.trim() && (
+  <tr className="description-row">
+    <td></td>
+
+    <td colSpan={4}>
+      <div className="print-value description-print">
+        {row.description}
+      </div>
+    </td>
+  </tr>
+)}
+
+    
+  </Fragment>
                         );
                       })}
                     </tbody>
@@ -776,8 +914,7 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
               <div className="document-closing">
                 <section className="summary-section">
                   <div className="note-card">
-                    <p>Det ble gitt en forlengelse av driften på 0 dager på grunn av endringer.</p>
-                    <p>Prisen inkluderer materialer og arbeid.</p>
+                    <p>{noteTexts[documentType]}</p>
                   </div>
 
                   <div className="totals-card">
@@ -787,28 +924,43 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
                     </div>
                     <div>
                       <span>Rigg og drift ({formatNok(riggDriftPercent)}%)</span>
-                      <strong>{formatNok(totals.riggDrift)}</strong>
+                      <strong>{formatNok(totals.riggDrift)} kr</strong>
                     </div>
                     <div>
                       <span>Sum eks mva</span>
-                      <strong>{formatNok(totals.subtotalWithRiggDrift)}</strong>
+                      <strong>{formatNok(totals.subtotalWithRiggDrift)} kr</strong>
                     </div>
                     <div>
                       <span>Mva (25%)</span>
-                      <strong>{formatNok(totals.vat)}</strong>
+                      <strong>{formatNok(totals.vat)} kr</strong>
                     </div>
                     <div className="grand-total">
                       <span>Sum inkl mva</span>
-                      <strong>{formatNok(totals.total)}</strong>
+                      <strong>{formatNok(totals.total)} kr</strong>
                     </div>
                   </div>
                 </section>
 
                 <footer className="document-footer">
                   <div>
-                    <p>Vennlig hilsen</p>
-                    <p className="mt-8 font-semibold text-slate-950">H &amp; M Malerservice AS</p>
-                  </div>
+  <p>Vennlig hilsen</p>
+
+  <div className="mt-6">
+    <p className="font-semibold text-slate-950">
+      {selectedEmployee.name}
+    </p>
+
+    <p style={{ whiteSpace: "pre-line" }}>
+      {selectedEmployee.title}
+    </p>
+
+    <p>{selectedEmployee.phone}</p>
+
+    <p className="mt-3 font-semibold text-slate-950">
+      H &amp; M Malerservice AS
+    </p>
+  </div>
+</div>
                   <CertificateStrip />
                 </footer>
               </div>
