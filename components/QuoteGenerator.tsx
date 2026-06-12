@@ -144,7 +144,7 @@ const certificates: CertificateAsset[] = [
   },
   {
     src: "/brand/sentralt.png",
-    alt: "Sentralt godkjent",
+    alt: "sentralt godkjent",
     width: 600,
     height: 600,
   },
