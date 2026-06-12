@@ -298,6 +298,18 @@ const [isLoaded, setIsLoaded] = useState(false);
   const [additionalDescription, setAdditionalDescription] = useState("");
   const [showDetailedDescription, setShowDetailedDescription] = useState(false);
   const [rows, setRows] = useState<QuoteRow[]>([createRow()]);
+
+const [customDocumentName, setCustomDocumentName] = useState(false);
+  const [documentName, setDocumentName] = useState("");
+  useEffect(() => {
+  if (customDocumentName) return;
+
+  setDocumentName(
+    project.trim()
+      ? `${documentNumber} - ${project.trim()}`
+      : documentNumber
+  );
+}, [documentNumber, project, customDocumentName]);
   function newDocument() {
   localStorage.removeItem("hm-quote-draft");
 
@@ -310,7 +322,7 @@ const [isLoaded, setIsLoaded] = useState(false);
   setPhone("");
   setAddress("");
   setEmail("");
-
+setDocumentName("");
   setDate(getTodayInputValue());
 
   setRiggDriftPercent(0);
@@ -442,8 +454,8 @@ useEffect(() => {
   }
 
   function generatePdf() {
-    window.print();
-  }
+  window.print();
+}
   function saveDocument() {
   const documentData = {
     selectedEmployee,
@@ -467,7 +479,11 @@ useEffect(() => {
     { type: "application/json" }
   );
 
-  const fileName = `${documentNumber || "dokument"}.hmdoc`;
+const safeFileName = documentName
+  .replace(/[<>:"/\\|?*]/g, "")
+  .trim();
+
+const fileName = `${safeFileName}.hmdoc`;
 
   const url = URL.createObjectURL(blob);
 
@@ -582,6 +598,16 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
                     value={documentNumber}
                   />
                 </label>
+              <label className="block">
+  <FieldLabel>Dokumentnavn</FieldLabel>
+  <input
+    className="form-control"
+    type="text"
+    value={documentName}
+    onChange={(event) => setDocumentName(event.target.value)}
+    placeholder="Dokumentnavn"
+  />
+</label>
 
                 <label className="block">
                   <FieldLabel>Prosjekt</FieldLabel>
