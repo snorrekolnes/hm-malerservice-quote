@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "HM Malerservice AS - Pristilbud",
-  description: "Internt verktøy for å lage pristilbud"
+  title: "H&M Kalkyle",
+  description: "H&M Malerservice kalkyle- og tilbudssystem"
 };
 
 export default function RootLayout({
