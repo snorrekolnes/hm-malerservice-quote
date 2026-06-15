@@ -5,6 +5,9 @@ import type { ReactNode } from "react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { formatDateForDisplay, formatNok } from "@/lib/format";
 
+
+
+
 type Unit = "rs" | "stk" | "lm" | "m²" | "m³" | "timer" | "dag";
 
 type DocumentType =
@@ -97,6 +100,14 @@ const employees: Employee[] = [
     phone: "+47 930 68 380",
     email: "",
     signature: "/signatures/magnor.png"
+  },
+  {
+    id: "snorre",
+    name: "Snorre Kolnes Røgenes",
+    title: "Prosjektleder",
+    phone: "+47 480 03 343",
+    email: "",
+    signature: "/signatures/snorre.png"
   }
 ];
 
@@ -307,6 +318,8 @@ setInternalNotes] =
 useState("");
 const [calculatorInput, setCalculatorInput] =
   useState("");
+  const [showIndexRegulation, setShowIndexRegulation] =
+  useState(false);
 
 const [calculatorResult, setCalculatorResult] =
   useState<number | null>(null);
@@ -531,6 +544,14 @@ subtotalAfterDiscount,
 
   function generatePdf() {
   window.print();
+}
+function formatSsbMonth(
+  value: string
+) {
+  const [year, month] =
+    value.split("-");
+
+  return `${year}M${Number(month)}`;
 }
 function calculateExpression() {
   try {
@@ -942,7 +963,7 @@ setInternalNotes(
                   <div className="company-card">
                     <p className="font-semibold text-slate-950">H &amp; M Malerservice AS</p>
                     <p>Banevigsgt. 7, 4014 Stavanger</p>
-                    <p>Tel: 51 89 09 60 / Fax: 51 89 62 60</p>
+                    <p>Tel: 51 89 09 60</p>
                     <p>
   <a
     href="https://www.hmmalerservice.no"
@@ -1477,6 +1498,46 @@ const lineTotal =
     >
       Sett som enhetspris
     </button>
+  )}
+</div>
+<div className="mt-6 border-t pt-4">
+  <button
+    type="button"
+    className="w-full text-left font-semibold"
+    onClick={() =>
+      setShowIndexRegulation(
+        !showIndexRegulation
+      )
+    }
+  >
+    {showIndexRegulation
+      ? "▲ Indeksregulering"
+      : "▼ Indeksregulering"}
+  </button>
+
+  {showIndexRegulation && (<div className="mt-4 space-y-3">
+    <p className="text-sm text-slate-500">
+      Åpne SSB sine offisielle kalkulatorer for indeksregulering.
+    </p>
+
+    <a
+      href="https://www.ssb.no/kalkulatorer/priskalkulator"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="secondary-button w-full flex justify-center"
+    >
+      KPI-kalkulator
+    </a>
+
+    <a
+      href="https://www.ssb.no/kalkulatorer/bkibol-kalkulator"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="secondary-button w-full flex justify-center"
+    >
+      Byggekostnadskalkulator
+    </a>
+  </div>
   )}
 </div>
 </aside>
