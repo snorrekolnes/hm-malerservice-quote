@@ -18,9 +18,12 @@ type DocumentType =
 type QuoteRow = {
   id: string;
   description: string;
-  unit: Unit;
+  internalNote: string;
   quantity: string;
   price: string;
+  unit: Unit;
+
+  markupPercent: number;
 };
 
 type CertificateAsset = {
@@ -144,7 +147,7 @@ const certificates: CertificateAsset[] = [
   },
   {
     src: "/brand/sentralt.png",
-    alt: "sentralt godkjent",
+    alt: "Sentralt godkjent",
     width: 600,
     height: 600,
   },
@@ -173,9 +176,12 @@ function createRow(): QuoteRow {
   return {
     id: crypto.randomUUID(),
     description: "",
-    unit: "rs",
-    quantity: "1",
-    price: "0"
+    internalNote: "",
+    quantity: "",
+    price: "",
+    unit: "stk",
+
+    markupPercent: 0
   };
 }
 
@@ -296,9 +302,32 @@ const [isLoaded, setIsLoaded] = useState(false);
   const [date, setDate] = useState(getTodayInputValue);
   const [riggDriftPercent, setRiggDriftPercent] = useState(0);
   const [additionalDescription, setAdditionalDescription] = useState("");
+  const [internalNotes,
+setInternalNotes] =
+useState("");
+const [calculatorInput, setCalculatorInput] =
+  useState("");
+
+const [calculatorResult, setCalculatorResult] =
+  useState<number | null>(null);
   const [showDetailedDescription, setShowDetailedDescription] = useState(false);
   const [rows, setRows] = useState<QuoteRow[]>([createRow()]);
-
+  const [selectedRowId, setSelectedRowId] =
+  useState<string | null>(null);
+  const [discountPercent, setDiscountPercent] =
+  useState(0);
+  const selectedRow =
+  rows.find(
+    (row) => row.id === selectedRowId
+  ) ?? null;
+useEffect(() => {
+  if (
+    rows.length > 0 &&
+    !selectedRowId
+  ) {
+    setSelectedRowId(rows[0].id);
+  }
+}, [rows, selectedRowId]);
 const [customDocumentName, setCustomDocumentName] = useState(false);
   const [documentName, setDocumentName] = useState("");
   useEffect(() => {
@@ -328,8 +357,14 @@ setDocumentName("");
   setRiggDriftPercent(0);
   setAdditionalDescription("");
   setShowDetailedDescription(false);
+  setDiscountPercent(0);
+setInternalNotes("");
 
-  setRows([createRow()]);
+  const firstRow = createRow();
+
+setRows([firstRow]);
+
+setSelectedRowId(firstRow.id);
 }
   useEffect(() => {
      if (!isLoaded) return;
@@ -350,7 +385,10 @@ setDocumentName("");
       riggDriftPercent,
       additionalDescription,
       showDetailedDescription,
-      rows
+      rows,
+      discountPercent,
+  selectedRowId, 
+  internalNotes
     })
   );
 }, [
@@ -367,7 +405,10 @@ setDocumentName("");
   riggDriftPercent,
   additionalDescription,
   showDetailedDescription,
-  rows
+  rows,
+  discountPercent,
+  selectedRowId,
+  internalNotes
 ]);
 useEffect(() => {
   const saved = localStorage.getItem("hm-quote-draft");
@@ -396,7 +437,20 @@ useEffect(() => {
     setRiggDriftPercent(data.riggDriftPercent);
     setAdditionalDescription(data.additionalDescription);
     setShowDetailedDescription(data.showDetailedDescription);
-    setRows(data.rows);
+    setRows(
+  (data.rows ?? []).map((row: any) => ({
+    ...row,
+    markupPercent: row.markupPercent ?? 0
+  }))
+);
+setSelectedRowId(
+  data.selectedRowId ??
+  data.rows?.[0]?.id ??
+  null
+);
+setInternalNotes(
+  data.internalNotes ?? ""
+);
 
   } finally {
     setIsLoaded(true);
@@ -404,23 +458,45 @@ useEffect(() => {
 }, []);
 
   const totals = useMemo(() => {
-    const subtotal = rows.reduce(
-      (sum, row) =>
-        sum + parseNorwegianNumber(row.quantity) * parseNorwegianNumber(row.price),
-      0
-    );
+    const subtotal = rows.reduce((sum, row) => {
+  const quantity =
+    parseNorwegianNumber(row.quantity || "0");
+
+  const price =
+    parseNorwegianNumber(row.price || "0");
+
+  const baseTotal = quantity * price;
+
+const markup =
+  row.markupPercent ?? 0;
+
+const lineTotal =
+  baseTotal *
+  (1 + markup / 100);
+
+  return sum + lineTotal;
+}, 0);
     const riggDrift = subtotal * (riggDriftPercent / 100);
     const subtotalWithRiggDrift = subtotal + riggDrift;
-    const vat = subtotalWithRiggDrift * 0.25;
+    const discountAmount =
+  subtotalWithRiggDrift *
+  (discountPercent / 100);
 
-    return {
+const subtotalAfterDiscount =
+  subtotalWithRiggDrift -
+  discountAmount;
+    const vat =
+  subtotalAfterDiscount * 0.25;
+
+    return {discountAmount,
+subtotalAfterDiscount,
       subtotal,
       riggDrift,
       subtotalWithRiggDrift,
       vat,
-      total: subtotalWithRiggDrift + vat
+      total: subtotalAfterDiscount + vat
     };
-  }, [riggDriftPercent, rows]);
+  }, [riggDriftPercent, discountPercent, rows]);
 
   const projectInformation = [
     { label: "Prosjekt", value: project },
@@ -456,6 +532,19 @@ useEffect(() => {
   function generatePdf() {
   window.print();
 }
+function calculateExpression() {
+  try {
+    const result = Function(
+      `"use strict"; return (${calculatorInput})`
+    )();
+
+    if (typeof result === "number" && isFinite(result)) {
+      setCalculatorResult(result);
+    }
+  } catch {
+    setCalculatorResult(null);
+  }
+}
   function saveDocument() {
   const documentData = {
     selectedEmployee,
@@ -471,7 +560,10 @@ useEffect(() => {
     riggDriftPercent,
     additionalDescription,
     showDetailedDescription,
-    rows
+    rows,
+  discountPercent,
+  selectedRowId,
+  internalNotes
   };
 
   const blob = new Blob(
@@ -525,7 +617,24 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
       setRiggDriftPercent(data.riggDriftPercent);
       setAdditionalDescription(data.additionalDescription);
       setShowDetailedDescription(data.showDetailedDescription);
-      setRows(data.rows);
+      setRows(
+  data.rows.map((row: QuoteRow) => ({
+    ...row,
+    markupPercent: row.markupPercent ?? 0
+  }))
+);
+setDiscountPercent(
+  data.discountPercent ?? 0
+);
+
+setSelectedRowId(
+  data.selectedRowId ??
+  data.rows?.[0]?.id ??
+  null
+);
+setInternalNotes(
+  data.internalNotes ?? ""
+);
 
     } catch {
       alert("Kunne ikke åpne dokumentet.");
@@ -537,7 +646,7 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
 
   return (
     <main className="min-h-screen bg-[#f5f6f8] px-4 py-6 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto grid max-w-[1520px] gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1800px] gap-6 xl:grid-cols-[340px_minmax(0,1fr)_320px]">
         <aside className="no-print h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-xs font-semibold uppercase text-slate-500">Internt verktøy</p>
@@ -604,7 +713,10 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
     className="form-control"
     type="text"
     value={documentName}
-    onChange={(event) => setDocumentName(event.target.value)}
+    onChange={(event) => {
+  setCustomDocumentName(true);
+  setDocumentName(event.target.value);
+}}
     placeholder="Dokumentnavn"
   />
 </label>
@@ -678,6 +790,16 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
                     value={address}
                   />
                 </label>
+                <label className="block">
+                  <FieldLabel>Interne notater</FieldLabel>
+                  <textarea
+                    className="form-control"
+                    onChange={(event) => setInternalNotes(event.target.value)}
+                    placeholder="Interne notater"
+                    rows={3}
+                    value={internalNotes}
+                  />
+                </label>
 
                 <label className="block">
                   <FieldLabel>Dato</FieldLabel>
@@ -738,6 +860,7 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
                   <span className="font-medium tabular-nums">{formatNok(totals.riggDrift)}</span>
                 </div>
                 <div className="flex items-center justify-between">
+                  
                   <span className="text-slate-500">Sum eks mva</span>
                   <span className="font-medium tabular-nums">
                     {formatNok(totals.subtotalWithRiggDrift)}
@@ -754,6 +877,7 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
               </div>
             </section>
           </div>
+          
 
           <div className="mt-5 space-y-3">
 <button
@@ -897,13 +1021,28 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
                     </thead>
                     <tbody>
                       {rows.map((row, index) => {
-                        const quantity = parseNorwegianNumber(row.quantity);
-                        const price = parseNorwegianNumber(row.price);
-                        const lineTotal = quantity * price;
+                        const quantity = parseNorwegianNumber(row.quantity || "0");
+const price = parseNorwegianNumber(row.price || "0");
+
+const baseTotal = quantity * price;
+
+const markup =
+  row.markupPercent ?? 0;
+
+const lineTotal =
+  baseTotal *
+  (1 + markup / 100);
 
                         return (
                           <Fragment key={row.id}>
-    <tr key={row.id}>
+   <tr
+  onClick={() => setSelectedRowId(row.id)}
+  className={
+    selectedRowId === row.id
+      ? "bg-blue-50"
+      : ""
+  }
+>
      <td className="post-number">
   <div>{index + 1}</div>
 
@@ -929,18 +1068,20 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
       </td>
 
       <td className="text-right">
-        <input
-          aria-label={`Mengde post ${index + 1}`}
-          className="table-control numeric-control text-right"
-          inputMode="decimal"
-          value={row.quantity}
-          onChange={(event) => {
-            if (isValidDecimalInput(event.target.value)) {
-              updateRow(row.id, { quantity: event.target.value });
-            }
-          }}
-          type="text"
-        />
+       <input
+  aria-label={`Mengde post ${index + 1}`}
+  className="table-control numeric-control text-right"
+  inputMode="decimal"
+  placeholder="1"
+  value={row.quantity}
+  onFocus={(e) => e.target.select()}
+  onChange={(event) => {
+    if (isValidDecimalInput(event.target.value)) {
+      updateRow(row.id, { quantity: event.target.value });
+    }
+  }}
+  type="text"
+/>
         <span className="print-value text-right">
           {formatNok(quantity)}
         </span>
@@ -948,17 +1089,19 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
 
       <td className="text-right">
         <input
-          aria-label={`Pris post ${index + 1}`}
-          className="table-control numeric-control text-right"
-          inputMode="decimal"
-          value={row.price}
-          onChange={(event) => {
-            if (isValidDecimalInput(event.target.value)) {
-              updateRow(row.id, { price: event.target.value });
-            }
-          }}
-          type="text"
-        />
+  aria-label={`Pris post ${index + 1}`}
+  className="table-control numeric-control text-right"
+  inputMode="decimal"
+  placeholder="0"
+  value={row.price}
+  onFocus={(e) => e.target.select()}
+  onChange={(event) => {
+    if (isValidDecimalInput(event.target.value)) {
+      updateRow(row.id, { price: event.target.value });
+    }
+  }}
+  type="text"
+/>
         <span className="print-value text-right">
   {formatNok(price)} kr
 </span>
@@ -1134,7 +1277,211 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
             </article>
           </div>
         </section>
+        <aside className="no-print h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+  <p className="text-xs font-semibold uppercase text-slate-500">
+    Kalkyle
+  </p>
+
+  {selectedRow ? (
+    <div className="mt-4 space-y-4">
+    <div className="flex items-center justify-between">
+  <FieldLabel>Post</FieldLabel>
+
+  <select
+    className="rounded-lg border border-slate-200 px-2 py-1 text-sm"
+    value={selectedRowId ?? ""}
+    onChange={(e) =>
+      setSelectedRowId(e.target.value)
+    }
+  >
+    {rows.map((row, index) => (
+      <option
+        key={row.id}
+        value={row.id}
+      >
+        Post {index + 1}
+      </option>
+    ))}
+  </select>
+</div>
+
+
+      <div>
+        <FieldLabel>Påslag (%)</FieldLabel>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={selectedRow.markupPercent ?? 0}
+          onChange={(e) =>
+            updateRow(selectedRow.id, {
+              markupPercent: Number(
+                e.target.value
+              )
+            })
+          }
+          className="w-full"
+        />
+
+        <div className="mt-1 text-right text-sm font-semibold">
+          {selectedRow.markupPercent} %
+        </div>
       </div>
+
+      <div className="rounded-xl bg-slate-50 p-4">
+  {(() => {
+    const basePrice =
+      parseNorwegianNumber(
+        selectedRow.quantity || "0"
+      ) *
+      parseNorwegianNumber(
+        selectedRow.price || "0"
+      );
+
+    const markupAmount =
+      basePrice *
+      ((selectedRow.markupPercent ?? 0) / 100);
+
+    const totalWithMarkup =
+      basePrice + markupAmount;
+
+    const discountAmount =
+      totalWithMarkup *
+      (discountPercent / 100);
+
+    const netAmount =
+      totalWithMarkup - discountAmount;
+
+    return (
+      <>
+        <div className="flex justify-between">
+          <span>Grunnpris</span>
+          <span>{formatNok(basePrice)} kr</span>
+        </div>
+
+        <div className="mt-2 flex justify-between">
+          <span>Påslag</span>
+          <span>{selectedRow.markupPercent ?? 0} %</span>
+        </div>
+
+        <div className="mt-2 flex justify-between">
+          <span>Påslag kr</span>
+          <span>{formatNok(markupAmount)} kr</span>
+        </div>
+        <div className="mt-2 flex justify-between">
+  <span>Utsalgspris</span>
+
+  <span>
+    {formatNok(
+      basePrice + markupAmount
+    )} kr
+  </span>
+</div>
+
+        <div className="mt-2 flex justify-between">
+          <span>Rabatt</span>
+          <span>{discountPercent} %</span>
+        </div>
+
+        <div className="mt-2 flex justify-between">
+          <span>Rabatt kr</span>
+          <span>{formatNok(discountAmount)} kr</span>
+        </div>
+        
+        <div className="mt-6 border-t pt-4">
+  <FieldLabel>Internt notat for valgt post</FieldLabel>
+
+<textarea
+  className="form-control"
+  rows={4}
+  value={selectedRow?.internalNote ?? ""}
+  onChange={(e) =>
+    updateRow(selectedRow.id, {
+      internalNote: e.target.value
+    })
+  }
+/>
+</div>
+
+        <div className="mt-3 border-t pt-3 flex justify-between font-semibold">
+          <span>Netto</span>
+          <span>{formatNok(netAmount)} kr</span>
+        </div>
+      </>
+    );
+  })()}
+</div>
+    </div>
+  ) : (
+    <p className="mt-4 text-sm text-slate-500">
+      Velg en post
+    </p>
+  )}
+
+  <div className="mt-6 border-t pt-4">
+    <FieldLabel>Rabatt (%)</FieldLabel>
+
+    <input
+      type="range"
+      min="0"
+      max="100"
+      value={discountPercent}
+      onChange={(e) =>
+        setDiscountPercent(
+          Number(e.target.value)
+        )
+      }
+      className="w-full"
+    />
+
+    <div className="mt-1 text-right text-sm font-semibold">
+      {discountPercent} %
+    </div>
+  </div>
+  <div className="mt-6 border-t pt-4">
+  <FieldLabel>Kalkulator</FieldLabel>
+
+  <input
+    type="text"
+    className="form-control"
+    placeholder="f.eks. 4*3453+2500"
+    value={calculatorInput}
+    onChange={(e) =>
+      setCalculatorInput(e.target.value)
+    }
+  />
+
+  <button
+    type="button"
+    className="secondary-button w-full mt-2"
+    onClick={calculateExpression}
+  >
+    Beregn
+  </button>
+
+  <div className="mt-3 text-center font-semibold">
+    {calculatorResult !== null
+      ? `${formatNok(calculatorResult)} kr`
+      : "-"}
+  </div>
+
+  {selectedRow && calculatorResult !== null && (
+    <button
+      type="button"
+      className="primary-button w-full mt-3"
+      onClick={() =>
+        updateRow(selectedRow.id, {
+          price: String(calculatorResult)
+        })
+      }
+    >
+      Sett som enhetspris
+    </button>
+  )}
+</div>
+</aside>
+      </div>
+      
     </main>
   );
 }
