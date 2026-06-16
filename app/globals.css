@@ -189,7 +189,7 @@ textarea {
 
 .a4-sheet {
   width: 210mm;
-  min-height: 297mm;
+   min-height: auto;
   padding: 15mm;
   background: #ffffff;
   color: #0f172a;
@@ -390,8 +390,8 @@ textarea {
 .summary-section {
   display: grid;
   grid-template-columns: 1fr 300px;
-  gap: 18px;
-  margin-top: 22px;
+  gap: 12px;      /* var 18px */
+  margin-top: 14px; /* var 22px */
   align-items: start;
 }
 
@@ -402,11 +402,20 @@ textarea {
   background: #f8fafc;
   padding: 18px;
 }
+.note-card p {
+  margin: 0;
+}
 
 .note-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #f8fafc;
+
+  padding: 10px 16px;   /* var 18px */
+  
   color: #475569;
   font-size: 13px;
-  line-height: 1.75;
+  line-height: 1.5;     /* var 1.75 */
 }
 
 .note-card p {
@@ -454,7 +463,7 @@ textarea {
   display: flex;
   justify-content: space-between;
   gap: 24px;
-  margin-top: 38px;
+  margin-top: 24px;
   color: #475569;
   font-size: 13px;
   line-height: 1.7;
@@ -462,6 +471,8 @@ textarea {
 
 .document-closing {
   break-inside: auto;
+    display: block;
+     margin-top: 12px;
 }
 
 .certificate-strip {
@@ -528,13 +539,11 @@ textarea {
   }
 
   .print-area {
-    position: absolute;
-    inset: 0;
-    margin: 0;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-  }
+  position: static;
+  margin: 0;
+  padding: 0;
+  box-shadow: none !important;
+}
 
   .a4-sheet {
     width: 210mm;
@@ -665,13 +674,13 @@ color: #0f172a;
 .signature-top {
   display: flex;
   align-items: center;
-  gap: 40px;
+  gap: 25px;
 }
 .signature-details {
   flex: 1;
 }
 .signature-logo img {
-  width: 140px;
+  width: 100px;
   height: auto;
 }
 .signature-line {
@@ -689,18 +698,18 @@ color: #0f172a;
 }.signature-title {
   font-style: italic;
 }.signature-strip img {
-  width: 100%;
-  max-height: 48px;
+  width: 85%;
+  max-height: 36px;
   object-fit: contain;
 }.signature-strip {
   text-align: center;
-  margin-top: 30px;
+  margin-top: 18px;
 }.signature-certificates img {
-  height: 60px;
+  height: 42px;
   width: auto;
   object-fit: contain;
 }.signature-certificates {
   display: flex;
   justify-content: center;
-  margin-top: 12px;
+  margin-top: 8px;
 }

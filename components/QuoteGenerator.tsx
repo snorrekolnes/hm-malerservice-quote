@@ -27,6 +27,7 @@ type QuoteRow = {
   unit: Unit;
 
   markupPercent: number;
+  discountPercent: number;
 };
 
 type CertificateAsset = {
@@ -192,7 +193,8 @@ function createRow(): QuoteRow {
     price: "",
     unit: "stk",
 
-    markupPercent: 0
+    markupPercent: 0,
+    discountPercent: 0
   };
 }
 
@@ -313,6 +315,8 @@ const [isLoaded, setIsLoaded] = useState(false);
   const [date, setDate] = useState(getTodayInputValue);
   const [riggDriftPercent, setRiggDriftPercent] = useState(0);
   const [additionalDescription, setAdditionalDescription] = useState("");
+  const [offerDiscount, setOfferDiscount] =
+  useState(0);
   const [internalNotes,
 setInternalNotes] =
 useState("");
@@ -329,6 +333,7 @@ const [calculatorResult, setCalculatorResult] =
   useState<string | null>(null);
   const [discountPercent, setDiscountPercent] =
   useState(0);
+  const [lineDiscountPercent, setLineDiscountPercent] = useState(0);
   const selectedRow =
   rows.find(
     (row) => row.id === selectedRowId
@@ -401,7 +406,8 @@ setSelectedRowId(firstRow.id);
       rows,
       discountPercent,
   selectedRowId, 
-  internalNotes
+  internalNotes,
+  offerDiscount
     })
   );
 }, [
@@ -453,7 +459,8 @@ useEffect(() => {
     setRows(
   (data.rows ?? []).map((row: any) => ({
     ...row,
-    markupPercent: row.markupPercent ?? 0
+    markupPercent: row.markupPercent ?? 0,
+    discountPercent: row.discountPercent ?? 0
   }))
 );
 setSelectedRowId(
@@ -483,33 +490,41 @@ setInternalNotes(
 const markup =
   row.markupPercent ?? 0;
 
-const lineTotal =
+const discount =
+  row.discountPercent ?? 0;
+
+const totalWithMarkup =
   baseTotal *
   (1 + markup / 100);
 
-  return sum + lineTotal;
+const lineTotal =
+  totalWithMarkup *
+  (1 - discount / 100);
+
+return sum + lineTotal;
 }, 0);
     const riggDrift = subtotal * (riggDriftPercent / 100);
     const subtotalWithRiggDrift = subtotal + riggDrift;
-    const discountAmount =
+const offerDiscountAmount =
   subtotalWithRiggDrift *
-  (discountPercent / 100);
+  (offerDiscount / 100);
 
 const subtotalAfterDiscount =
   subtotalWithRiggDrift -
-  discountAmount;
+  offerDiscountAmount;
     const vat =
   subtotalAfterDiscount * 0.25;
 
-    return {discountAmount,
+    return {
 subtotalAfterDiscount,
       subtotal,
       riggDrift,
+      offerDiscountAmount,
       subtotalWithRiggDrift,
       vat,
       total: subtotalAfterDiscount + vat
     };
-  }, [riggDriftPercent, discountPercent, rows]);
+  }, [riggDriftPercent, offerDiscount, rows]);
 
   const projectInformation = [
     { label: "Prosjekt", value: project },
@@ -831,6 +846,37 @@ setInternalNotes(
                     type="date"
                   />
                 </label>
+                <label className="block">
+                  <FieldLabel>Rabatt %</FieldLabel>
+                <div className="range-field">
+  <input
+    type="range"
+    min="0"
+    max="50"
+    step="1"
+    value={offerDiscount}
+onChange={(e) =>
+  setOfferDiscount(
+    Number(e.target.value)
+  )
+    }
+  />
+
+  <input
+    type="number"
+    min="0"
+    max="50"
+    step="1"
+    value={offerDiscount}
+onChange={(e) =>
+  setOfferDiscount(
+    Number(e.target.value)
+  )
+    }
+    className="form-control range-number"
+  />
+</div>
+</label>
 
                 <label className="block">
                   <FieldLabel>Rigg og drift %</FieldLabel>
@@ -880,11 +926,19 @@ setInternalNotes(
                   <span className="text-slate-500">Rigg og drift ({formatNok(riggDriftPercent)}%)</span>
                   <span className="font-medium tabular-nums">{formatNok(totals.riggDrift)}</span>
                 </div>
+                {offerDiscount > 0 && (
+  <div className="flex items-center justify-between">
+    <span>Rabatt ({offerDiscount} %)</span>
+    <span className="font-medium tabular-nums">
+      - {formatNok(totals.offerDiscountAmount)}
+    </span>
+  </div>
+)}
                 <div className="flex items-center justify-between">
-                  
+                
                   <span className="text-slate-500">Sum eks mva</span>
                   <span className="font-medium tabular-nums">
-                    {formatNok(totals.subtotalWithRiggDrift)}
+                    {formatNok(totals.subtotalAfterDiscount)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -1050,9 +1104,16 @@ const baseTotal = quantity * price;
 const markup =
   row.markupPercent ?? 0;
 
-const lineTotal =
+const discount =
+  row.discountPercent ?? 0;
+
+const totalWithMarkup =
   baseTotal *
   (1 + markup / 100);
+
+const lineTotal =
+  totalWithMarkup *
+  (1 - discount / 100);
 
                         return (
                           <Fragment key={row.id}>
@@ -1226,9 +1287,17 @@ const lineTotal =
                       <span>Rigg og drift ({formatNok(riggDriftPercent)}%)</span>
                       <strong>{formatNok(totals.riggDrift)} kr</strong>
                     </div>
+                    {offerDiscount > 0 && (
+  <div>
+    <span>Rabatt ({offerDiscount}%)</span>
+    <strong>
+      - {formatNok(totals.offerDiscountAmount)} kr
+    </strong>
+  </div>
+)}
                     <div>
-                      <span>Sum eks mva</span>
-                      <strong>{formatNok(totals.subtotalWithRiggDrift)} kr</strong>
+                     <span>Sum eks mva</span>
+<strong>{formatNok(totals.subtotalAfterDiscount)} kr</strong>
                     </div>
                     <div>
                       <span>Mva (25%)</span>
@@ -1328,6 +1397,27 @@ const lineTotal =
 
 
       <div>
+        <div className="mt-6 border-t pt-4">
+    <FieldLabel>Rabatt (%)</FieldLabel>
+
+    <input
+      type="range"
+      min="0"
+      max="100"
+      value={selectedRow.discountPercent ?? 0}
+
+onChange={(e) =>
+  updateRow(selectedRow.id, {
+    discountPercent: Number(e.target.value)
+  })
+}
+      className="w-full"
+    />
+
+    <div className="mt-1 text-right text-sm font-semibold">
+      {selectedRow.discountPercent ?? 0} %
+    </div>
+  </div>
         <FieldLabel>Påslag (%)</FieldLabel>
         <input
           type="range"
@@ -1366,19 +1456,23 @@ const lineTotal =
     const totalWithMarkup =
       basePrice + markupAmount;
 
-    const discountAmount =
-      totalWithMarkup *
-      (discountPercent / 100);
+      const discountAmount =
+  totalWithMarkup *
+  ((selectedRow.discountPercent ?? 0) / 100);
 
-    const netAmount =
-      totalWithMarkup - discountAmount;
+const netAmount =
+  totalWithMarkup -
+  discountAmount;
+
 
     return (
       <>
         <div className="flex justify-between">
+          
           <span>Grunnpris</span>
           <span>{formatNok(basePrice)} kr</span>
         </div>
+        
 
         <div className="mt-2 flex justify-between">
           <span>Påslag</span>
@@ -1401,14 +1495,8 @@ const lineTotal =
 
         <div className="mt-2 flex justify-between">
           <span>Rabatt</span>
-          <span>{discountPercent} %</span>
+          <span>{selectedRow.discountPercent ?? 0} %</span>
         </div>
-
-        <div className="mt-2 flex justify-between">
-          <span>Rabatt kr</span>
-          <span>{formatNok(discountAmount)} kr</span>
-        </div>
-        
         <div className="mt-6 border-t pt-4">
   <FieldLabel>Internt notat for valgt post</FieldLabel>
 
@@ -1423,11 +1511,6 @@ const lineTotal =
   }
 />
 </div>
-
-        <div className="mt-3 border-t pt-3 flex justify-between font-semibold">
-          <span>Netto</span>
-          <span>{formatNok(netAmount)} kr</span>
-        </div>
       </>
     );
   })()}
@@ -1439,26 +1522,7 @@ const lineTotal =
     </p>
   )}
 
-  <div className="mt-6 border-t pt-4">
-    <FieldLabel>Rabatt (%)</FieldLabel>
-
-    <input
-      type="range"
-      min="0"
-      max="100"
-      value={discountPercent}
-      onChange={(e) =>
-        setDiscountPercent(
-          Number(e.target.value)
-        )
-      }
-      className="w-full"
-    />
-
-    <div className="mt-1 text-right text-sm font-semibold">
-      {discountPercent} %
-    </div>
-  </div>
+  
   <div className="mt-6 border-t pt-4">
   <FieldLabel>Kalkulator</FieldLabel>
 
