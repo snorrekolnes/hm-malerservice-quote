@@ -648,7 +648,7 @@ const safeFileName = documentName
   .replace(/[<>:"/\\|?*]/g, "")
   .trim();
 
-const fileName = `${safeFileName}.hmdoc`;
+const fileName = `${safeFileName}.json`;
 
   const url = URL.createObjectURL(blob);
 
