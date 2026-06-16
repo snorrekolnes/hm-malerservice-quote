@@ -618,6 +618,35 @@ function calculateQuantityExpression() {
     setQuantityCalculatorResult(null);
   }
 }
+function handleDrop(
+  event: React.DragEvent<HTMLDivElement>
+) {
+  event.preventDefault();
+
+  const file =
+    event.dataTransfer.files?.[0];
+
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(
+        e.target?.result as string
+      );
+
+      loadProjectData(data);
+
+    } catch {
+      alert(
+        "Kunne ikke åpne dokumentet."
+      );
+    }
+  };
+
+  reader.readAsText(file);
+}
   function saveDocument() {
   const documentData = {
     selectedEmployee,
@@ -662,6 +691,43 @@ const fileName = `${safeFileName}.hmdoc`;
 
   URL.revokeObjectURL(url);
 }
+function loadProjectData(data: any) {
+  if (data.selectedEmployee) {
+    setSelectedEmployee(data.selectedEmployee);
+  }
+
+  setDocumentType(data.documentType);
+  setDocumentNumber(data.documentNumber);
+  setProject(data.project);
+  setCustomer(data.customer);
+  setContactPerson(data.contactPerson);
+  setPhone(data.phone);
+  setAddress(data.address);
+  setEmail(data.email);
+  setDate(data.date);
+  setRiggDriftPercent(data.riggDriftPercent);
+  setAdditionalDescription(data.additionalDescription);
+  setShowDetailedDescription(data.showDetailedDescription);
+
+  setRows(
+    data.rows.map((row: QuoteRow) => ({
+      ...row,
+      markupPercent: row.markupPercent ?? 0
+    }))
+  );
+
+  setDiscountPercent(data.discountPercent ?? 0);
+
+  setSelectedRowId(
+    data.selectedRowId ??
+    data.rows?.[0]?.id ??
+    null
+  );
+
+  setInternalNotes(
+    data.internalNotes ?? ""
+  );
+}
 
 function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
   
@@ -677,38 +743,7 @@ function loadDocument(event: React.ChangeEvent<HTMLInputElement>) {
       if (data.selectedEmployee) {
   setSelectedEmployee(data.selectedEmployee);
 }
-
-      setDocumentType(data.documentType);
-      setDocumentNumber(data.documentNumber);
-      setProject(data.project);
-      setCustomer(data.customer);
-      setContactPerson(data.contactPerson);
-      setPhone(data.phone);
-      setAddress(data.address);
-      setEmail(data.email);
-      setDate(data.date);
-      setRiggDriftPercent(data.riggDriftPercent);
-      setAdditionalDescription(data.additionalDescription);
-      setShowDetailedDescription(data.showDetailedDescription);
-      setRows(
-  data.rows.map((row: QuoteRow) => ({
-    ...row,
-    markupPercent: row.markupPercent ?? 0
-  }))
-);
-setDiscountPercent(
-  data.discountPercent ?? 0
-);
-
-setSelectedRowId(
-  data.selectedRowId ??
-  data.rows?.[0]?.id ??
-  null
-);
-setInternalNotes(
-  data.internalNotes ?? ""
-);
-
+    loadProjectData(data);
     } catch {
       alert("Kunne ikke åpne dokumentet.");
     }
@@ -725,7 +760,49 @@ setInternalNotes(
             <p className="text-xs font-semibold uppercase text-slate-500">Internt verktøy</p>
             <h1 className="mt-2 text-2xl font-semibold text-slate-950">{documentType}</h1>
           </div>
+<div className="mt-5 space-y-3">
+<button
+  type="button"
+  className="secondary-button w-full"
+  onClick={newDocument}
+>
+  Nytt dokument
+</button>
+  <button
+    className="secondary-button w-full"
+    onClick={saveDocument}
+    type="button"
+  >
+    💾 Lagre dokument
+  </button>
 
+  <div
+  className="rounded-xl border-2 border-dashed border-slate-300 p-4 text-center"
+  onDragOver={(e) =>
+    e.preventDefault()
+  }
+  onDrop={handleDrop}
+>
+  <p className="font-semibold">
+    Dra .hmdoc hit
+  </p>
+
+  <p className="text-sm text-slate-500 mt-1">
+    eller åpne dokument
+  </p>
+
+  <label className="secondary-button mt-3 flex justify-center cursor-pointer">
+    📂 Åpne dokument
+
+    <input
+      hidden
+      accept=".hmdoc"
+      type="file"
+      onChange={loadDocument}
+    />
+  </label>
+</div>
+</div>
           <div className="mt-5 space-y-5">
             <section>
 <div className="mb-5">
@@ -986,46 +1063,18 @@ onChange={(e) =>
                   <span className="font-semibold">Sum inkl mva</span>
                   <span className="text-lg font-semibold tabular-nums">{formatNok(totals.total)}</span>
                 </div>
+                
               </div>
+              
             </section>
-          </div>
-          
-
-          <div className="mt-5 space-y-3">
-<button
-  type="button"
-  className="secondary-button w-full"
-  onClick={newDocument}
->
-  Nytt dokument
-</button>
-  <button
-    className="secondary-button w-full"
-    onClick={saveDocument}
-    type="button"
-  >
-    💾 Lagre dokument
-  </button>
-
-  <label className="secondary-button w-full flex justify-center cursor-pointer">
-    📂 Åpne dokument
-    <input
-      hidden
-      accept=".hmdoc"
-      type="file"
-      onChange={loadDocument}
-    />
-  </label>
-
-  <button
+            <button
     className="primary-button w-full"
     onClick={generatePdf}
     type="button"
   >
     Generer dokument
   </button>
-
-</div>
+          </div>
         </aside>
 
         <section className="overflow-auto pb-10">
