@@ -317,11 +317,25 @@ const [isLoaded, setIsLoaded] = useState(false);
   const [additionalDescription, setAdditionalDescription] = useState("");
   const [offerDiscount, setOfferDiscount] =
   useState(0);
+  const [showPriceCalculator, setShowPriceCalculator] =
+  useState(false);
+
+const [showQuantityCalculator, setShowQuantityCalculator] =
+  useState(false);
   const [internalNotes,
 setInternalNotes] =
 useState("");
 const [calculatorInput, setCalculatorInput] =
   useState("");
+  const [
+  quantityCalculatorInput,
+  setQuantityCalculatorInput
+] = useState("");
+
+const [
+  quantityCalculatorResult,
+  setQuantityCalculatorResult
+] = useState<number | null>(null);
   const [showIndexRegulation, setShowIndexRegulation] =
   useState(false);
 
@@ -338,6 +352,13 @@ const [calculatorResult, setCalculatorResult] =
   rows.find(
     (row) => row.id === selectedRowId
   ) ?? null;
+  useEffect(() => {
+  setCalculatorInput("");
+  setCalculatorResult(null);
+
+  setQuantityCalculatorInput("");
+  setQuantityCalculatorResult(null);
+}, [selectedRowId]);
 useEffect(() => {
   if (
     rows.length > 0 &&
@@ -579,6 +600,22 @@ function calculateExpression() {
     }
   } catch {
     setCalculatorResult(null);
+  }
+}
+function calculateQuantityExpression() {
+  try {
+    const result = Function(
+      `"use strict"; return (${quantityCalculatorInput})`
+    )();
+
+    if (
+      typeof result === "number" &&
+      isFinite(result)
+    ) {
+      setQuantityCalculatorResult(result);
+    }
+  } catch {
+    setQuantityCalculatorResult(null);
   }
 }
   function saveDocument() {
@@ -1524,44 +1561,128 @@ const netAmount =
 
   
   <div className="mt-6 border-t pt-4">
-  <FieldLabel>Kalkulator</FieldLabel>
-
-  <input
-    type="text"
-    className="form-control"
-    placeholder="f.eks. 4*3453+2500"
-    value={calculatorInput}
-    onChange={(e) =>
-      setCalculatorInput(e.target.value)
-    }
-  />
-
   <button
     type="button"
-    className="secondary-button w-full mt-2"
-    onClick={calculateExpression}
+    className="w-full text-left font-semibold"
+    onClick={() =>
+      setShowPriceCalculator(
+        !showPriceCalculator
+      )
+    }
   >
-    Beregn
+    {showPriceCalculator
+      ? "▲ Enhetspriskalkulator"
+      : "▼ Enhetspriskalkulator"}
   </button>
 
-  <div className="mt-3 text-center font-semibold">
-    {calculatorResult !== null
-      ? `${formatNok(calculatorResult)} kr`
-      : "-"}
-  </div>
+  {showPriceCalculator && (
+    <>
+      <input
+        type="text"
+        className="form-control mt-3"
+        placeholder="f.eks. 4*3453+2500"
+        value={calculatorInput}
+        onChange={(e) =>
+          setCalculatorInput(e.target.value)
+        }
+      />
 
-  {selectedRow && calculatorResult !== null && (
-    <button
-      type="button"
-      className="primary-button w-full mt-3"
-      onClick={() =>
-        updateRow(selectedRow.id, {
-          price: String(calculatorResult)
-        })
-      }
-    >
-      Sett som enhetspris
-    </button>
+      <button
+        type="button"
+        className="secondary-button w-full mt-2"
+        onClick={calculateExpression}
+      >
+        Beregn
+      </button>
+
+      <div className="mt-3 text-center font-semibold">
+        {calculatorResult !== null
+          ? `${formatNok(calculatorResult)} kr`
+          : "-"}
+      </div>
+
+      {selectedRow &&
+        calculatorResult !== null && (
+          <button
+            type="button"
+            className="primary-button w-full mt-3"
+            onClick={() =>
+              updateRow(selectedRow.id, {
+                price: String(
+                  calculatorResult
+                )
+              })
+            }
+          >
+            Sett som enhetspris
+          </button>
+      )}
+    </>
+  )}
+</div>
+<div className="mt-6 border-t pt-4">
+  <button
+    type="button"
+    className="w-full text-left font-semibold"
+    onClick={() =>
+      setShowQuantityCalculator(
+        !showQuantityCalculator
+      )
+    }
+  >
+    {showQuantityCalculator
+      ? "▲ Mengdekalkulator"
+      : "▼ Mengdekalkulator"}
+  </button>
+
+  {showQuantityCalculator && (
+    <>
+      <input
+        type="text"
+        className="form-control mt-3"
+        placeholder="f.eks. 12+12"
+        value={quantityCalculatorInput}
+        onChange={(e) =>
+          setQuantityCalculatorInput(
+            e.target.value
+          )
+        }
+      />
+
+      <button
+        type="button"
+        className="secondary-button w-full mt-2"
+        onClick={
+          calculateQuantityExpression
+        }
+      >
+        Beregn
+      </button>
+
+      <div className="mt-3 text-center font-semibold">
+        {quantityCalculatorResult !== null
+          ? quantityCalculatorResult
+          : "-"}
+      </div>
+
+      {selectedRow &&
+        quantityCalculatorResult !==
+          null && (
+          <button
+            type="button"
+            className="primary-button w-full mt-3"
+            onClick={() =>
+              updateRow(selectedRow.id, {
+                quantity: String(
+                  quantityCalculatorResult
+                )
+              })
+            }
+          >
+            Sett som mengde
+          </button>
+      )}
+    </>
   )}
 </div>
 <div className="mt-6 border-t pt-4">
